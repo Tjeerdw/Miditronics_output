@@ -7,9 +7,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-
 TwoWire display_I2C =  TwoWire(0);
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
 void setup() {
@@ -33,14 +31,11 @@ void setup() {
   display.setCursor(30, 10);
   display.println("Hello     Church!");
   display.display(); 
-
-  
 }
 
 void loop() {
   setOutput(17,1);
   delay(1000);
-
   setOutput(17,0);
   delay(1000);
 }
