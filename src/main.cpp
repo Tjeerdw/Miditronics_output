@@ -11,6 +11,9 @@ TwoWire display_I2C =  TwoWire(0);
 TwoWire extenders_I2C =  TwoWire(1);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 Adafruit_MCP23017 ext1;
+Adafruit_MCP23017 ext2;
+Adafruit_MCP23017 ext3;
+Adafruit_MCP23017 ext4;
 
 void setup() {
   //USB serial init
@@ -25,10 +28,24 @@ void setup() {
 
   //extender init
   extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
-  ext1.begin(0, &extenders_I2C);
-  ext1.pinMode(0, OUTPUT);
-
-
+  ext1.begin(ADDRESS_EXT1, &extenders_I2C);
+  ext2.begin(ADDRESS_EXT2, &extenders_I2C);
+  ext3.begin(ADDRESS_EXT3, &extenders_I2C);
+  ext4.begin(ADDRESS_EXT4, &extenders_I2C);
+  //set all pins to output
+  for(int i =0;i<16;i++){ 
+    ext1.pinMode(i, OUTPUT);
+    Serial.println(i);}
+  for(int i =0;i<16;i++){
+    ext2.pinMode(i, OUTPUT);
+    Serial.println(i);}
+  for(int i =0;i<16;i++){
+    ext3.pinMode(i, OUTPUT);
+    Serial.println(i);}
+  for(int i =0;i<16;i++){
+    ext4.pinMode(i, OUTPUT);
+    Serial.println(i);}
+  
   
   //first little text test
   display.clearDisplay();
@@ -40,10 +57,10 @@ void setup() {
 }
 
 void loop() {
-  ext1.digitalWrite(0,HIGH);
+  ext2.digitalWrite(0,HIGH);
   Serial.println("high");
   delay(1000);
-  ext1.digitalWrite(0,LOW);
+  ext2.digitalWrite(0,LOW);
   Serial.println("low");
   delay(1000);
 }

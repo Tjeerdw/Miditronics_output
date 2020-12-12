@@ -14,3 +14,9 @@
 #define DISPLAY_I2C_SCL 26
 #define EXTENDERS_I2C_SDA 21
 #define EXTENDERS_I2C_SCL 22
+
+//Extenders
+#define ADDRESS_EXT1 0
+#define ADDRESS_EXT2 1
+#define ADDRESS_EXT3 2
+#define ADDRESS_EXT4 3
