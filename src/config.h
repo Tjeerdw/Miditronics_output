@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+//turn on serial debugging
+#define SERIALDEBUG 
+
 //OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
