@@ -11,27 +11,35 @@ Adafruit_MCP23017 ext3;
 Adafruit_MCP23017 ext4;
 
 void extendersInit(){
-  extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
-  ext1.begin(ADDRESS_EXT1, &extenders_I2C);
-  ext2.begin(ADDRESS_EXT2, &extenders_I2C);
-  ext3.begin(ADDRESS_EXT3, &extenders_I2C);
-  ext4.begin(ADDRESS_EXT4, &extenders_I2C);
+    extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
+    ext1.begin(ADDRESS_EXT1, &extenders_I2C);
+    ext2.begin(ADDRESS_EXT2, &extenders_I2C);
+    ext3.begin(ADDRESS_EXT3, &extenders_I2C);
+    ext4.begin(ADDRESS_EXT4, &extenders_I2C);
 
-  //TODO SET ALL OUTPUTs LOW
+   
+    
 
-  for(int i =0;i<16;i++){ 
-    ext1.pinMode(i, OUTPUT);
-    Serial.println(i);}
-  for(int i =0;i<16;i++){
-    ext2.pinMode(i, OUTPUT);
-    Serial.println(i);}
-  for(int i =0;i<16;i++){
-    ext3.pinMode(i, OUTPUT);
-    Serial.println(i);}
-  for(int i =0;i<16;i++){
-    ext4.pinMode(i, OUTPUT);
-    Serial.println(i);}
-  }
+    for(int i =0;i<16;i++){ 
+        ext1.pinMode(i, OUTPUT);
+        Serial.println(i);}
+    for(int i =0;i<16;i++){
+        ext2.pinMode(i, OUTPUT);
+        Serial.println(i);}
+    for(int i =0;i<16;i++){
+        ext3.pinMode(i, OUTPUT);
+        Serial.println(i);}
+    for(int i =0;i<16;i++){
+        ext4.pinMode(i, OUTPUT);
+        Serial.println(i);}
+    
+    
+      //TODO SET ALL OUTPUTs LOW
+    for (int i=1; i<64; i++){
+        setOutput(i,0);
+    }
+    
+}
 
 void setOutput(uint8_t outputNumber, uint8_t outputValue){
     #ifdef SERIALDEBUG
@@ -41,23 +49,20 @@ void setOutput(uint8_t outputNumber, uint8_t outputValue){
     Serial.println(outputValue); 
     #endif
 
-    if (outputNumber < 8)
+    if (outputNumber <= 8)
         ext1.digitalWrite(8-outputNumber,outputValue);
-    else if(outputNumber < 16)
+    else if(outputNumber <= 16)
         ext1.digitalWrite(outputNumber-16,outputValue);
-
-    else if(outputNumber < 24)
+    else if(outputNumber <= 24)
         ext2.digitalWrite(8-(outputNumber-16),outputValue);
-    else if(outputNumber < 32)
+    else if(outputNumber <= 32)
         ext2.digitalWrite(outputNumber-16,outputValue);
-
-    else if(outputNumber < 40)
+    else if(outputNumber <= 40)
         ext3.digitalWrite(8-(outputNumber-32),outputValue);
-    else if(outputNumber < 48)
+    else if(outputNumber <= 48)
         ext3.digitalWrite(outputNumber-32,outputValue);
-
-    else if(outputNumber < 56)
+    else if(outputNumber <= 56)
         ext4.digitalWrite(8-(outputNumber-48),outputValue);
-    else if(outputNumber < 64)
+    else if(outputNumber <= 64)
         ext4.digitalWrite(outputNumber-48,outputValue);
 }

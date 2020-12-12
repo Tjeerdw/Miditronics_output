@@ -33,6 +33,8 @@ void setup() {
   display.setCursor(30, 10);
   display.println("Hello     Church!");
   display.display(); 
+
+  
 }
 
 void loop() {
