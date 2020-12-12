@@ -36,9 +36,9 @@ void setup() {
 }
 
 void loop() {
-  setOutput(16,1);
+  setOutput(17,1);
   delay(1000);
 
-  setOutput(16,0);
+  setOutput(17,0);
   delay(1000);
 }
