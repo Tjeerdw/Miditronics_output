@@ -5,10 +5,12 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "Adafruit_MCP23017.h"
 
 TwoWire display_I2C =  TwoWire(0);
 TwoWire extenders_I2C =  TwoWire(1);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
+Adafruit_MCP23017 ext1;
 
 void setup() {
   //USB serial init
@@ -23,6 +25,9 @@ void setup() {
 
   //extender init
   extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
+  ext1.begin(0, &extenders_I2C);
+  ext1.pinMode(0, OUTPUT);
+
 
   
   //first little text test
@@ -35,37 +40,10 @@ void setup() {
 }
 
 void loop() {
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning...");
-  nDevices = 0;
-  for(address = 1; address < 127; address++ ) {
-    extenders_I2C.beginTransmission(address);
-    error = extenders_I2C.endTransmission();
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-      nDevices++;
-    }
-    else if (error==4) {
-      Serial.print("Unknow error at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
-  }
-  else {
-    Serial.println("done\n");
-  }
-
-
-  Serial.println("loop");
+  ext1.digitalWrite(0,HIGH);
+  Serial.println("high");
+  delay(1000);
+  ext1.digitalWrite(0,LOW);
+  Serial.println("low");
   delay(1000);
 }
