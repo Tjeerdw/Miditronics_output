@@ -10,6 +10,8 @@
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
+// de groeten van ruud tuut
+
 void setup() {
   //USB serial init
   Serial.begin(115200);
