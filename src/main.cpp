@@ -34,8 +34,15 @@ void setup() {
 }
 
 void loop() {
-  setOutput(17,1);
-  delay(1000);
-  setOutput(17,0);
-  delay(1000);
+  for (int i = 1; i < 9; i++){
+    setOutput(i,1);
+    if (i == 1){
+      setOutput(8,0);}
+    else{
+      setOutput(i-1,0);}
+    delay(100);
+  }
+  
+
+  
 }
