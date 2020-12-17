@@ -23,4 +23,14 @@
 #define ADDRESS_EXT3 2
 #define ADDRESS_EXT4 3
 
+//buttons
+#define BUT_UP      35
+#define BUT_DOWN    36
+#define BUT_LEFT    34
+#define BUT_RIGHT   39
+
+//Menu
+#define MAX_DEPTH 2
+
+
 #endif

@@ -42,7 +42,7 @@ void loop() {
       setOutput(8,0);}
     else{
       setOutput(i-1,0);}
-    delay(100);
+    delay(1);
   }
   
 
