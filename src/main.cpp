@@ -6,14 +6,76 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/FreeMono9pt7b.h>
+
+#include <menu.h>
+#include <menuIO/adafruitGfxOut.h>
+#include <menuIO/keyIn.h>
+
+using namespace Menu;
 
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
-void setup() {
-  //USB serial init
-  Serial.begin(115200);
+keyMap joystickBtn_map[] = {
+  { -BUT_RIGHT, defaultNavCodes[enterCmd].ch} ,
+  { -BUT_DOWN, defaultNavCodes[upCmd].ch} ,
+  { -BUT_UP, defaultNavCodes[downCmd].ch}  ,
+  { -BUT_LEFT, defaultNavCodes[escCmd].ch}  ,
+};
+keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
+int ledCtrl=LOW;
+result myLedOn() {
+  setOutput(1,1);
+  return proceed;
+}
+result myLedOff() {
+  setOutput(1,0);
+  return proceed;
+}
+
+TOGGLE(ledCtrl,setOutputType,"type: ",doNothing,noEvent,noStyle//,doExit,enterEvent,noStyle
+  ,VALUE("Noten",HIGH,doNothing,noEvent)
+  ,VALUE("Registers",LOW,doNothing,noEvent)
+);
+
+
+int MidiChannel=1;
+
+MENU(mainMenu,"Menu",doNothing,noEvent,wrapStyle
+  ,FIELD(MidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
+  ,SUBMENU(setOutputType)
+  ,OP("LED On",myLedOn,enterEvent)
+  ,OP("LED Off",myLedOff,enterEvent)
+  ,EXIT("<Back")
+);
+
+const colorDef<uint16_t> colors[6] MEMMODE={
+  {{BLACK,WHITE},{BLACK,WHITE,WHITE}},//bgColor
+  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//fgColor
+  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//valColor
+  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//unitColor
+  {{WHITE,BLACK},{BLACK,BLACK,BLACK}},//cursorColor
+  {{WHITE,BLACK},{BLACK,WHITE,WHITE}},//titleColor
+};
+
+MENU_OUTPUTS(out,MAX_DEPTH
+  ,ADAGFX_OUT(display,colors,fontX,fontY,{0,0,SCREEN_WIDTH/fontX,SCREEN_HEIGHT/fontY})
+  ,NONE
+);
+
+NAVROOT(nav,mainMenu,MAX_DEPTH,joystickBtns,out);
+
+result idle(menuOut& o,idleEvent e) {
+  o.setCursor(0,0);
+  o.print(F("Miditronics Output"));
+  o.setCursor(0,1);
+  o.print(F("Press button for menu"));
+  return proceed;
+}
+
+void setup() {
   //display init
   display_I2C.begin(DISPLAY_I2C_SDA, DISPLAY_I2C_SCL, 100000);
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
@@ -21,28 +83,43 @@ void setup() {
     for(;;); // Don't proceed, loop forever
   } 
 
-  //extenders init
-  extendersInit();
-    
   //first little text test
   display.clearDisplay();
-  display.setTextSize(2);
+  //display.setFont(&FreeMono9pt7b);
+  //display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.setCursor(30, 10);
-  display.println("Hello     Church!");
+  display.setCursor(0, 10);
+  display.println("Miditronics Output");
+  display.println("Booting...");
   display.display(); 
+
+  //USB serial init
+  Serial.begin(115200);
+  display.println("Serial init");
+  display.display(); 
+
+  //Navigation
+  joystickBtns.begin();
+  nav.timeOut=5;
+  nav.idleTask=idle;//point a function to be used when menu is suspended
+  display.println("Navigation init");
+  display.display();  
+
+  //extenders init
+  extendersInit();
+  display.println("Extenders init");
+  display.display();  
+
+  display.println("Starting...");
+  display.display();  
+  delay(2000);
 }
 
 void loop() {
-  for (int i = 1; i < 9; i++){
-    setOutput(i,1);
-    if (i == 1){
-      setOutput(8,0);}
-    else{
-      setOutput(i-1,0);}
-    delay(100);
-  }
-  
 
-  
+  nav.doInput();
+  if (nav.changed(0)) {//only draw if changed
+    nav.doOutput();
+    display.display();
+  } 
 }

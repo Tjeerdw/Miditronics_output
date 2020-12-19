@@ -23,4 +23,20 @@
 #define ADDRESS_EXT3 2
 #define ADDRESS_EXT4 3
 
+//buttons
+#define BUT_UP      35
+#define BUT_DOWN    36
+#define BUT_LEFT    34
+#define BUT_RIGHT   39
+#define NAV_BUTTONS_INPUT_PULLUP
+#define TOTAL_NAV_BUTTONS 4
+
+//Menu
+//Default font: lcd5x7
+//#define LARGE_FONT Verdana12
+#define MAX_DEPTH 2
+#define fontX 6
+#define fontY 10
+
+
 #endif
