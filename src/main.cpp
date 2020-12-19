@@ -103,19 +103,23 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity)
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue)
 {
   if ((incomingChannel == controlChangeChannel) & (registerModule)) {  //register control-changemessage, nader beschouwen
+    if (incomingValue == 127) {
+        for (int i = 1; i < 65; i++) {
+          setOutput(i,LOW);
+        }
     if (incomingNumber == controlChangeAan) {
       if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
-        setOutput((incomingValue - (registerStartWaarde -1)), HIGH);
+        setOutput((incomingValue - (registerStartWaarde +1)), HIGH);
       }
     }
     if (incomingNumber == controlChangeUit) {
       if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
-        setOutput((incomingValue - (registerStartWaarde -1)), LOW);
+        setOutput((incomingValue - (registerStartWaarde +1)), LOW);
       }
     }
   }
 }   
-    
+}
 
 
 void setup() {
