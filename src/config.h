@@ -24,8 +24,8 @@
 #define ADDRESS_EXT4 3
 
 //buttons
-#define BUT_UP      35
-#define BUT_DOWN    36
+#define BUT_UP      36
+#define BUT_DOWN    35
 #define BUT_LEFT    34
 #define BUT_RIGHT   39
 #define NAV_BUTTONS_INPUT_PULLUP
@@ -35,8 +35,8 @@
 //Default font: lcd5x7
 //#define LARGE_FONT Verdana12
 #define MAX_DEPTH 2
-#define fontX 5
-#define fontY 7
+#define fontX 7
+#define fontY 9
 
 
 #endif

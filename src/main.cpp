@@ -113,6 +113,9 @@ result idle(menuOut& o,idleEvent e) {
 void setup() {
   //USB serial init
   Serial.begin(115200);
+  joystickBtns.begin();
+  nav.idleTask=idle;//point a function to be used when menu is suspended
+
 
   //display init
   display_I2C.begin(DISPLAY_I2C_SDA, DISPLAY_I2C_SCL, 100000);
@@ -126,7 +129,7 @@ void setup() {
     
   //first little text test
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(30, 10);
   display.println("Hello     Church!");
