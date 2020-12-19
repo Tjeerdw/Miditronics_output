@@ -36,7 +36,7 @@
 //#define LARGE_FONT Verdana12
 #define MAX_DEPTH 2
 #define fontX 6
-#define fontY 8
+#define fontY 10
 
 
 #endif
