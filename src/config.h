@@ -28,9 +28,15 @@
 #define BUT_DOWN    36
 #define BUT_LEFT    34
 #define BUT_RIGHT   39
+#define NAV_BUTTONS_INPUT_PULLUP
+#define TOTAL_NAV_BUTTONS 4
 
 //Menu
+//Default font: lcd5x7
+//#define LARGE_FONT Verdana12
 #define MAX_DEPTH 2
+#define fontX 5
+#define fontY 7
 
 
 #endif
