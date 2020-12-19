@@ -24,12 +24,6 @@ keyMap joystickBtn_map[] = {
 };
 keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
-result showEvent(eventMask e,navNode& nav,prompt& item) {
-  Serial.print(F("event:"));
-  Serial.print(e);
-  return proceed;
-}
-
 int ledCtrl=LOW;
 result myLedOn() {
   setOutput(1,1);
@@ -40,19 +34,11 @@ result myLedOff() {
   return proceed;
 }
 
-result alert(menuOut& o,idleEvent e);
-result doAlert(eventMask e, prompt &item);
-
-
-
 TOGGLE(ledCtrl,setLed,"Led: ",doNothing,noEvent,noStyle//,doExit,enterEvent,noStyle
   ,VALUE("On",HIGH,doNothing,noEvent)
   ,VALUE("Off",LOW,doNothing,noEvent)
 );
 
-const char* constMEM hexDigit MEMMODE="0123456789ABCDEF";
-const char* constMEM hexNr[] MEMMODE={"0","x",hexDigit,hexDigit};
-char buf1[]="0x11";
 
 int test=55;
 
@@ -61,8 +47,6 @@ MENU(mainMenu,"Main menu",doNothing,noEvent,wrapStyle
   ,SUBMENU(setLed)
   ,OP("LED On",myLedOn,enterEvent)
   ,OP("LED Off",myLedOff,enterEvent)
-  ,OP("Alert test",doAlert,enterEvent)
-  ,EDIT("Hex",buf1,hexNr,doNothing,noEvent,noStyle)
   ,EXIT("<Back")
 );
 
@@ -82,23 +66,6 @@ MENU_OUTPUTS(out,MAX_DEPTH
 
 NAVROOT(nav,mainMenu,MAX_DEPTH,joystickBtns,out);
 
-result alert(menuOut& o,idleEvent e) {
-  if (e==idling) {
-    o.setCursor(0,0);
-    o.print(F("alert test"));
-    o.setCursor(0,1);
-    o.print(F("press [select]"));
-    o.setCursor(0,2);
-    o.print(F("to continue..."));
-  }
-  return proceed;
-}
-
-result doAlert(eventMask e, prompt &item) {
-  nav.idleOn(alert);
-  return proceed;
-}
-
 result idle(menuOut& o,idleEvent e) {
   o.setCursor(0,0);
   o.print(F("suspended..."));
@@ -108,7 +75,6 @@ result idle(menuOut& o,idleEvent e) {
   o.print(F("to continue"));
   return proceed;
 }
-
 
 void setup() {
   //USB serial init

@@ -24,8 +24,8 @@
 #define ADDRESS_EXT4 3
 
 //buttons
-#define BUT_UP      36
-#define BUT_DOWN    35
+#define BUT_UP      35
+#define BUT_DOWN    36
 #define BUT_LEFT    34
 #define BUT_RIGHT   39
 #define NAV_BUTTONS_INPUT_PULLUP
