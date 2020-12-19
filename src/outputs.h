@@ -1,5 +1,5 @@
-#ifndef __BUZZER_H
-#define __BUZZER_H
+#ifndef __OUTPUTS_H
+#define __OUTPUTS_H
 
 #include <Arduino.h>
 
