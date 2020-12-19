@@ -15,7 +15,12 @@
 #include <MIDI.h>
   //config midi instance on serial 2
   MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
-  int ModuleMidiNoteChannel=1; //midikanaal moet geimplementeerd worden in eeprom en menu settings
+  //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
+  int listeningMidiChannel=1;
+  boolean registerModule = false;
+  boolean notenModule = true;
+  int registerStartWaarde = 70;  //simulatie rugwerkregisters
+  int registerEindWaarde = 87;  //simulatie rugwerkregisters
 
 using namespace Menu;
 
@@ -46,10 +51,8 @@ TOGGLE(ledCtrl,setOutputType,"type: ",doNothing,noEvent,noStyle//,doExit,enterEv
 );
 
 
-int MidiChannel=1;
-
 MENU(mainMenu,"Menu",doNothing,noEvent,wrapStyle
-  ,FIELD(MidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
+  ,FIELD(listeningMidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
   ,SUBMENU(setOutputType)
   ,OP("LED On",myLedOn,enterEvent)
   ,OP("LED Off",myLedOff,enterEvent)
@@ -79,6 +82,38 @@ result idle(menuOut& o,idleEvent e) {
   o.print(F("Press button for menu"));
   return proceed;
 }
+
+void handleNoteOn(byte channel, byte pitch, byte velocity)
+{
+  if ((MIDI.getChannel() == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+    setOutput(1,HIGH); //placeholder uiteraard
+  }
+}
+
+void handleNoteOff(byte channel, byte pitch, byte velocity)
+{
+  if ((MIDI.getChannel() == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+    setOutput(1,LOW); //placeholder uiteraard
+  }
+}
+
+void handleControlChange(byte channel, byte number, byte value)
+{
+  if ((channel == 8) & (registerModule)) {  //register control-changemessage, nader beschouwen
+    if (number == 80) {
+      if ((value > registerStartWaarde) & (value < registerEindWaarde)) {
+        setOutput((value - (registerStartWaarde -1)), HIGH);
+      }
+    }
+    if (number == 81) {
+      if ((value > registerStartWaarde) & (value < registerEindWaarde)) {
+        setOutput((value - (registerStartWaarde -1)), LOW);
+      }
+    }
+  }
+}   
+    
+
 
 void setup() {
   //display init
@@ -121,6 +156,9 @@ void setup() {
 
   //Midi init, listen Omni
   Serial2.begin(31250, SERIAL_8N1, MIDI_RX_PIN, MIDI_TX_PIN);
+  MIDI.setHandleNoteOn(handleNoteOn);
+  MIDI.setHandleNoteOff(handleNoteOff);
+  MIDI.setHandleControlChange(handleControlChange);
   MIDI.begin();
 
 }
@@ -133,16 +171,5 @@ void loop() {
     display.display();
   } 
   //handle incoming midi messages
-      if (MIDI.read())                    
-    {
-      switch(MIDI.getChannel())      // Get the incoming channel and handle accordingly
-        {
-            case 1:       // Act if incoming note is for our configured incoming midi channel
-                break;
-            case 8:
-                break;
-            default:
-                break;
-        }
-    }
+  MIDI.read();
 }
