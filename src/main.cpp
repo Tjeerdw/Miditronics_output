@@ -21,6 +21,9 @@
   boolean notenModule = true;
   int registerStartWaarde = 70;  //simulatie rugwerkregisters
   int registerEindWaarde = 87;  //simulatie rugwerkregisters
+  int controlChangeChannel = 8; //control change kanaal
+  int controlChangeAan = 80; //control change waarde aan
+  int controlChangeUit = 81; //control change waarde uit
 
 using namespace Menu;
 
@@ -83,31 +86,31 @@ result idle(menuOut& o,idleEvent e) {
   return proceed;
 }
 
-void handleNoteOn(byte channel, byte pitch, byte velocity)
+void handleNoteOn(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((MIDI.getChannel() == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
     setOutput(1,HIGH); //placeholder uiteraard
   }
 }
 
-void handleNoteOff(byte channel, byte pitch, byte velocity)
+void handleNoteOff(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((MIDI.getChannel() == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
     setOutput(1,LOW); //placeholder uiteraard
   }
 }
 
-void handleControlChange(byte channel, byte number, byte value)
+void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue)
 {
-  if ((channel == 8) & (registerModule)) {  //register control-changemessage, nader beschouwen
-    if (number == 80) {
-      if ((value > registerStartWaarde) & (value < registerEindWaarde)) {
-        setOutput((value - (registerStartWaarde -1)), HIGH);
+  if ((incomingChannel == controlChangeChannel) & (registerModule)) {  //register control-changemessage, nader beschouwen
+    if (incomingNumber == controlChangeAan) {
+      if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
+        setOutput((incomingValue - (registerStartWaarde -1)), HIGH);
       }
     }
-    if (number == 81) {
-      if ((value > registerStartWaarde) & (value < registerEindWaarde)) {
-        setOutput((value - (registerStartWaarde -1)), LOW);
+    if (incomingNumber == controlChangeUit) {
+      if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
+        setOutput((incomingValue - (registerStartWaarde -1)), LOW);
       }
     }
   }
