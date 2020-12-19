@@ -12,6 +12,11 @@
 #include <menuIO/adafruitGfxOut.h>
 #include <menuIO/keyIn.h>
 
+#include <MIDI.h>
+  //config midi instance on serial 2
+  MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+  int ModuleMidiNoteChannel=1; //midikanaal moet geimplementeerd worden in eeprom en menu settings
+
 using namespace Menu;
 
 TwoWire display_I2C =  TwoWire(0);
@@ -113,6 +118,11 @@ void setup() {
   display.println("Starting...");
   display.display();  
   delay(2000);
+
+  //Midi init, listen Omni
+  Serial2.begin(31250, SERIAL_8N1, MIDI_RX_PIN, MIDI_TX_PIN);
+  MIDI.begin();
+
 }
 
 void loop() {
@@ -122,4 +132,17 @@ void loop() {
     nav.doOutput();
     display.display();
   } 
+  //handle incoming midi messages
+      if (MIDI.read())                    
+    {
+      switch(MIDI.getChannel())      // Get the incoming channel and handle accordingly
+        {
+            case 1:       // Act if incoming note is for our configured incoming midi channel
+                break;
+            case 8:
+                break;
+            default:
+                break;
+        }
+    }
 }
