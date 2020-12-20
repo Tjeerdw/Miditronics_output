@@ -119,7 +119,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
   if (registerModule) {
   //Generaal Reset
     if (incomingValue == 127) {
-      for (int i = 1; i < 65; i++) {
+      for (int i = 1; i < totaalModuleKanalen; i++) {
         setOutput(i,LOW);
       }
     }
