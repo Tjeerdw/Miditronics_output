@@ -35,7 +35,7 @@
 //Default font: lcd5x7
 //#define LARGE_FONT Verdana12
 #define MAX_DEPTH 2
-#define fontX 6
+#define fontX 5
 #define fontY 10
 
 
