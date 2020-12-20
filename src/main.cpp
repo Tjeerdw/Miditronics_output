@@ -19,7 +19,6 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 int listeningMidiChannel=1;
 boolean registerModule = false;
 boolean notenModule = true;
-int controlChangeChannel = 8; //control change kanaal
 int controlChangeAan = 80; //control change waarde aan
 int controlChangeUit = 81; //control change waarde uit
 int totaalModuleKanalen = 64; //definieert het aantal kanalen dat deze module kan aansturen (32/64)
