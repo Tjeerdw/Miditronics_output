@@ -24,6 +24,7 @@
   int controlChangeChannel = 8; //control change kanaal
   int controlChangeAan = 80; //control change waarde aan
   int controlChangeUit = 81; //control change waarde uit
+  int registerOffSet = 0; //registeroffset in geval van extra registermodule
 
 using namespace Menu;
 
@@ -88,38 +89,44 @@ result idle(menuOut& o,idleEvent e) {
 
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-On message voor deze module, actie ondernemen    
     setOutput(1,HIGH); //placeholder uiteraard
   }
 }
 
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-on/off message voor deze module, actie ondernemen    
+  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-Off message voor deze module, actie ondernemen    
     setOutput(1,LOW); //placeholder uiteraard
   }
 }
 
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue)
 {
-  if ((incomingChannel == controlChangeChannel) & (registerModule)) {  //register control-changemessage, nader beschouwen
+  if (registerModule) {
+  //Generaal Reset
     if (incomingValue == 127) {
-        for (int i = 1; i < 65; i++) {
-          setOutput(i,LOW);
-        }
-    if (incomingNumber == controlChangeAan) {
-      if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
-        setOutput((incomingValue - (registerStartWaarde +1)), HIGH);
+      for (int i = 1; i < 65; i++) {
+        setOutput(i,LOW);
       }
     }
-    if (incomingNumber == controlChangeUit) {
-      if ((incomingValue > registerStartWaarde) & (incomingValue < registerEindWaarde)) {
-        setOutput((incomingValue - (registerStartWaarde +1)), LOW);
+  //Register inschakelen      
+    if (incomingNumber == controlChangeAan) {
+      if (registerOffSet >0){
+          incomingValue=(incomingValue - registerOffSet); 
+         }
+        setOutput(incomingValue, HIGH);
       }
+    //Register uitschakelen
+    if (incomingNumber == controlChangeUit) {
+      if (registerOffSet >0){
+        incomingValue=(incomingValue - registerOffSet); 
+        }
+      setOutput(incomingValue, LOW);
     }
   }
 }   
-}
+
 
 
 void setup() {
@@ -178,5 +185,5 @@ void loop() {
     display.display();
   } 
   //handle incoming midi messages
-  MIDI.read();
+  MIDI.read(listeningMidiChannel);
 }
