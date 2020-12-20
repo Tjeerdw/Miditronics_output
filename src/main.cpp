@@ -43,7 +43,7 @@ TOGGLE(ledCtrl,setOutputType,"type: ",doNothing,noEvent,noStyle//,doExit,enterEv
 
 int MidiChannel=1;
 
-MENU(mainMenu,"Menu",doNothing,noEvent,wrapStyle
+MENU(mainMenu,"--------Menu---------",doNothing,noEvent,wrapStyle
   ,FIELD(MidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
   ,SUBMENU(setOutputType)
   ,OP("LED On",myLedOn,enterEvent)
@@ -67,6 +67,7 @@ MENU_OUTPUTS(out,MAX_DEPTH
 
 NAVROOT(nav,mainMenu,MAX_DEPTH,joystickBtns,out);
 
+//excecute when menu exit
 result idle(menuOut& o,idleEvent e) {
   o.setCursor(0,0);
   o.print(F("Miditronics Output"));
