@@ -13,18 +13,22 @@
 #include <menuIO/keyIn.h>
 
 #include <MIDI.h>
-  //config midi instance on serial 2
-  MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
-  //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
-  int listeningMidiChannel=1;
-  boolean registerModule = false;
-  boolean notenModule = true;
-  int registerStartWaarde = 70;  //simulatie rugwerkregisters
-  int registerEindWaarde = 87;  //simulatie rugwerkregisters
-  int controlChangeChannel = 8; //control change kanaal
-  int controlChangeAan = 80; //control change waarde aan
-  int controlChangeUit = 81; //control change waarde uit
-  int registerOffSet = 0; //registeroffset in geval van extra registermodule
+//config midi instance on serial 2
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+//config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
+int listeningMidiChannel=1;
+boolean registerModule = false;
+boolean notenModule = true;
+int registerStartWaarde = 70;  //simulatie rugwerkregisters
+int registerEindWaarde = 87;  //simulatie rugwerkregisters
+int controlChangeChannel = 8; //control change kanaal
+int controlChangeAan = 80; //control change waarde aan
+int controlChangeUit = 81; //control change waarde uit
+int totaalModuleKanalen = 64; //definieert het aantal kanalen dat deze module kan aansturen (32/64)
+int registerOffSet = 0; //registeroffset in geval van extra registermodule
+int startNoot = 22; //midi-nootnummer waarop deze module moet starten
+int eindNoot = (startNoot + totaalModuleKanalen); //midi-nootnummer waar deze module stopt met reageren
+
 
 using namespace Menu;
 
@@ -87,20 +91,29 @@ result idle(menuOut& o,idleEvent e) {
   return proceed;
 }
 
+//note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-On message voor deze module, actie ondernemen    
-    setOutput(1,HIGH); //placeholder uiteraard
+  if (notenModule) {  
+    velocity = 127; //ter ere van Hendrikus
+    pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
+    setOutput(pitch,HIGH); //schakel noot in
   }
 }
 
+//note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity)
 {
-  if ((incomingChannel == listeningMidiChannel) & (notenModule)) {  //note-Off message voor deze module, actie ondernemen    
-    setOutput(1,LOW); //placeholder uiteraard
+  if (notenModule) {
+    velocity = 127; //ter ere van Hendrikus
+    if ((pitch>startNoot) && (pitch<eindNoot)) {
+      pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
+      setOutput(pitch,LOW); //schakel noot uit
+    } 
   }
 }
 
+//Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue)
 {
   if (registerModule) {
@@ -112,21 +125,24 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
     }
   //Register inschakelen      
     if (incomingNumber == controlChangeAan) {
-      if (registerOffSet >0){
-          incomingValue=(incomingValue - registerOffSet); 
-         }
+      if (!(incomingValue<registerOffSet)){ //checkt of dit register binnen ingestelde bereik valt
+        if (registerOffSet >0){ 
+            incomingValue=(incomingValue - registerOffSet);  //converteert control change waarde naar juiste output in geval van offset
+           }
         setOutput(incomingValue, HIGH);
       }
+  }
     //Register uitschakelen
     if (incomingNumber == controlChangeUit) {
-      if (registerOffSet >0){
-        incomingValue=(incomingValue - registerOffSet); 
-        }
-      setOutput(incomingValue, LOW);
+      if (!(incomingValue<registerOffSet)) {
+        if (registerOffSet >0){
+          incomingValue=(incomingValue - registerOffSet); 
+          }
+        setOutput(incomingValue, LOW);
+      }
     }
-  }
-}   
-
+  }   
+}
 
 
 void setup() {
@@ -173,7 +189,9 @@ void setup() {
   MIDI.setHandleNoteOn(handleNoteOn);
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
-  MIDI.begin();
+  MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
+
+
 
 }
 
@@ -185,5 +203,5 @@ void loop() {
     display.display();
   } 
   //handle incoming midi messages
-  MIDI.read(listeningMidiChannel);
+  MIDI.read();
 }
