@@ -128,7 +128,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
   //Register inschakelen      
     if (incomingNumber == controlChangeAan) {
       if (!(incomingValue<registerOffSet)){ //checkt of dit register binnen ingestelde bereik valt
-        if (registerOffSet >0){ 
+        if (registerOffSet){ 
             incomingValue=(incomingValue - registerOffSet);  //converteert control change waarde naar juiste output in geval van offset
            }
         setOutput(incomingValue, HIGH);
@@ -137,7 +137,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
     //Register uitschakelen
     if (incomingNumber == controlChangeUit) {
       if (!(incomingValue<registerOffSet)) {
-        if (registerOffSet >0){
+        if (registerOffSet){
           incomingValue=(incomingValue - registerOffSet); 
           }
         setOutput(incomingValue, LOW);
