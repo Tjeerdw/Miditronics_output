@@ -183,18 +183,18 @@ void setup() {
   display.println("Extenders init");
   display.display();  
 
-  display.println("Starting...");
-  display.display();  
-  delay(2000);
-
   //Midi init, listen Omni
-  Serial2.begin(31250, SERIAL_8N1, MIDI_RX_PIN, MIDI_TX_PIN);
+  Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN);
+  pinMode(MIDI_IN_DE_PIN, OUTPUT);
+  digitalWrite(MIDI_IN_DE_PIN, LOW); //Receiver enable 
   MIDI.setHandleNoteOn(handleNoteOn);
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
   MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
 
-
+ display.println("Starting...");
+  display.display();  
+  delay(2000);
 
 }
 

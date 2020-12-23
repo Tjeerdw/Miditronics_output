@@ -39,8 +39,11 @@
 #define fontY 10
 
 //Midi-Serial
-#define MIDI_RX_PIN 16
-#define MIDI_TX_PIN 17
-
+#define MIDI_IN_RX_PIN 9
+#define MIDI_IN_TX_PIN 10
+#define MIDI_IN_DE_PIN 11
+#define MIDI_TH_RX_PIN 16
+#define MIDI_TH_TX_PIN 17
+#define MIDI_TH_DE_PIN 7
 
 #endif
