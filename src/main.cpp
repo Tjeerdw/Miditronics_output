@@ -13,17 +13,23 @@
 #include <menuIO/keyIn.h>
 
 #include <MIDI.h>
+
+#include <EEPROM.h>
+
 //config midi instance on serial 2
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
-int listeningMidiChannel=1;
-boolean registerModule = false; // if not register, it must be notenmodule
-int controlChangeAan = 80; //control change waarde aan
-int controlChangeUit = 81; //control change waarde uit
-int totaalModuleKanalen = 64; //definieert het aantal kanalen dat deze module kan aansturen (32/64)
-int registerOffSet = 0; //registeroffset in geval van extra registermodule
-int startNoot = 36; //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
-int eindNoot = (startNoot + totaalModuleKanalen); //midi-nootnummer waar deze module stopt met reageren
+
+//Persistent variables through EEPROM
+int listeningMidiChannel=1;     // to be fetched from
+bool registerModule = false;    // if not register, it must be notenmodule
+int registerOffSet = 0;         //registeroffset in geval van extra registermodule
+int startNoot = 36;             //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
+
+const int controlChangeAan = 80;//control change waarde aan
+const int controlChangeUit = 81;//control change waarde uit
+int totaalModuleKanalen = 64;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
+#define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 
 using namespace Menu;
 
