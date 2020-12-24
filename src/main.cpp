@@ -182,7 +182,8 @@ void setup() {
   joystickBtns.begin();
   nav.timeOut=5;
   nav.idleTask=idle;//point a function to be used when menu is suspended 
-
+  options->invertFieldKeys = true; 
+  
   //extenders init
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
