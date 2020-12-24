@@ -3,32 +3,28 @@
 #include <SPI.h>
 #include "config.h"
 #include "outputs.h"
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Fonts/FreeMono9pt7b.h>
-
 #include <menu.h>
 #include <menuIO/adafruitGfxOut.h>
 #include <menuIO/keyIn.h>
-
 #include <MIDI.h>
-
-#include <EEPROM.h>
+#include <ArduinoNvs.h>
 
 //config midi instance on serial 2
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
 
 //Persistent variables through EEPROM
-int listeningMidiChannel=1;     // to be fetched from
+uint8_t listeningMidiChannel=1;     // to be fetched from
 bool registerModule = false;    // if not register, it must be notenmodule
-int registerOffSet = 0;         //registeroffset in geval van extra registermodule
-int startNoot = 36;             //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
+uint8_t registerOffSet = 0;         //registeroffset in geval van extra registermodule
+uint8_t startNoot = 36;             //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
 
 const int controlChangeAan = 80;//control change waarde aan
 const int controlChangeUit = 81;//control change waarde uit
-int totaalModuleKanalen = 64;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
+uint8_t totaalModuleKanalen = 64;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 
 using namespace Menu;
@@ -167,6 +163,22 @@ void setup() {
   //USB serial init
   Serial.begin(115200);
   display.println("Serial init");
+  display.display(); 
+
+  //Non-volatile storage init
+  NVS.begin();
+  listeningMidiChannel = NVS.getInt("channel");
+  registerModule = NVS.getInt("regmodule");
+  registerOffSet = NVS.getInt("regoffset");
+  startNoot = NVS.getInt("startnoot");
+  display.println("CH/mod/off/nut:");
+  display.print(listeningMidiChannel);
+  display.print("/");
+  display.print(registerModule);
+  display.print("/");
+  display.print(registerOffSet);
+  display.print("/");
+  display.println(startNoot);
   display.display(); 
 
   //Navigation
