@@ -24,7 +24,7 @@ uint8_t startNoot = 36;             //midi-nootnummer waarop deze module moet st
 
 const int controlChangeAan = 80;//control change waarde aan
 const int controlChangeUit = 81;//control change waarde uit
-uint8_t totaalModuleKanalen = 64;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
+uint8_t totaalModuleKanalen = 0;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 
 using namespace Menu;
@@ -155,15 +155,12 @@ void setup() {
   //first little text test
   display.clearDisplay();
   display.setTextColor(WHITE);
-  display.setCursor(0, 10);
+  display.setCursor(0, 0);
   display.println("Miditronics Output");
-  display.println("Booting...");
   display.display(); 
 
   //USB serial init
   Serial.begin(115200);
-  display.println("Serial init");
-  display.display(); 
 
   //Non-volatile storage init
   NVS.begin();
@@ -184,13 +181,15 @@ void setup() {
   //Navigation
   joystickBtns.begin();
   nav.timeOut=5;
-  nav.idleTask=idle;//point a function to be used when menu is suspended
-  display.println("Navigation init");
-  display.display();  
+  nav.idleTask=idle;//point a function to be used when menu is suspended 
 
   //extenders init
+  extendersI2Cinit();
+  totaalModuleKanalen = extendersCount()*16;
   extendersInit();
-  display.println("Extenders init");
+  display.print("found ");
+  display.print(totaalModuleKanalen);
+  display.println(" outputs");
   display.display();  
 
   //Midi init, listen Omni
@@ -202,8 +201,6 @@ void setup() {
   MIDI.setHandleControlChange(handleControlChange);
   MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
 
-  display.println("Starting...");
-  display.display();  
   delay(2000);
 
 }

@@ -10,15 +10,29 @@ Adafruit_MCP23017 ext2;
 Adafruit_MCP23017 ext3;
 Adafruit_MCP23017 ext4;
 
+void extendersI2Cinit(){
+   extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
+}
+
+uint8_t extendersCount(){
+    byte error, address;
+    int nDevices = 0;
+    for(address = 1; address < 127; address++ ) {
+        extenders_I2C.beginTransmission(address);
+        error = extenders_I2C.endTransmission();
+        if (error == 0) {
+            nDevices++;
+        }
+    }
+    return nDevices;
+}
+
+
 void extendersInit(){
-    extenders_I2C.begin(EXTENDERS_I2C_SDA, EXTENDERS_I2C_SCL, 100000);
     ext1.begin(ADDRESS_EXT1, &extenders_I2C);
     ext2.begin(ADDRESS_EXT2, &extenders_I2C);
     ext3.begin(ADDRESS_EXT3, &extenders_I2C);
     ext4.begin(ADDRESS_EXT4, &extenders_I2C);
-
-   
-    
 
     for(int i =0;i<16;i++){ 
         ext1.pinMode(i, OUTPUT);
