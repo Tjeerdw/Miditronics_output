@@ -28,26 +28,27 @@ uint8_t extendersCount(){
 }
 
 
-void extendersInit(){
-    ext1.begin(ADDRESS_EXT1, &extenders_I2C);
-    ext2.begin(ADDRESS_EXT2, &extenders_I2C);
-    ext3.begin(ADDRESS_EXT3, &extenders_I2C);
-    ext4.begin(ADDRESS_EXT4, &extenders_I2C);
-
-    for(int i =0;i<16;i++){ 
-        ext1.pinMode(i, OUTPUT);
-        Serial.println(i);}
-    for(int i =0;i<16;i++){
-        ext2.pinMode(i, OUTPUT);
-        Serial.println(i);}
-    for(int i =0;i<16;i++){
-        ext3.pinMode(i, OUTPUT);
-        Serial.println(i);}
-    for(int i =0;i<16;i++){
-        ext4.pinMode(i, OUTPUT);
-        Serial.println(i);}
-    
-    
+void extendersInit(uint8_t channelNumbers){
+    if(channelNumbers>=32){
+        ext1.begin(ADDRESS_EXT1, &extenders_I2C);
+        ext2.begin(ADDRESS_EXT2, &extenders_I2C);
+        for(int i =0;i<16;i++){ 
+            ext1.pinMode(i, OUTPUT);
+            Serial.println(i);}
+        for(int i =0;i<16;i++){
+            ext2.pinMode(i, OUTPUT);
+            Serial.println(i);}
+    }
+    if(channelNumbers>=64){
+        ext3.begin(ADDRESS_EXT3, &extenders_I2C);
+        ext4.begin(ADDRESS_EXT4, &extenders_I2C);
+        for(int i =0;i<16;i++){
+            ext3.pinMode(i, OUTPUT);
+            Serial.println(i);}
+        for(int i =0;i<16;i++){
+            ext4.pinMode(i, OUTPUT);
+            Serial.println(i);}
+    }
       //TODO SET ALL OUTPUTs LOW
     for (int i=1; i<64; i++){
         setOutput(i,0);

@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 void extendersI2Cinit();
-void extendersInit();
+void extendersInit(uint8_t channelNumbers);
 uint8_t extendersCount();
 void setOutput(uint8_t outputNumber, uint8_t outputValue);
 

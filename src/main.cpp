@@ -186,7 +186,7 @@ void setup() {
   //extenders init
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
-  extendersInit();
+  extendersInit(totaalModuleKanalen);
   display.print("found ");
   display.print(totaalModuleKanalen);
   display.println(" outputs");
