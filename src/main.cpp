@@ -45,7 +45,21 @@ keyMap joystickBtn_map[] = {
 };
 keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
-int ledCtrl=LOW;
+void loadNVSSettings(){
+  listeningMidiChannel = NVS.getInt("channel");
+  registerModule = NVS.getInt("regmodule");
+  registerOffSet = NVS.getInt("regoffset");
+  startNoot = NVS.getInt("startnoot");
+}
+
+void saveNVSSettingsReset(){
+  NVS.setInt("channel",listeningMidiChannel);
+  NVS.setInt("regmodule",registerModule);
+  NVS.setInt("regoffset",registerOffSet);
+  NVS.setInt("startnoot", startNoot);
+  ESP.restart();
+}
+
 result myLedOn() {
   setOutput(1,1);
   return proceed;
@@ -55,16 +69,21 @@ result myLedOff() {
   return proceed;
 }
 
-TOGGLE(ledCtrl,setOutputType,"type: ",doNothing,noEvent,noStyle//,doExit,enterEvent,noStyle
-  ,VALUE("Noten",HIGH,doNothing,noEvent)
-  ,VALUE("Registers",LOW,doNothing,noEvent)
+
+
+TOGGLE(registerModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doExit,enterEvent,noStyle
+  ,VALUE("Noten",false,doNothing,noEvent)
+  ,VALUE("Registers",true,doNothing,noEvent)
 );
 
 MENU(mainMenu,"--------Menu---------",doNothing,noEvent,wrapStyle
   ,FIELD(listeningMidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
+  ,FIELD(registerOffSet,"registerOffSet","",0,63,1,0,doNothing,noEvent,wrapStyle)
+  ,FIELD(startNoot,"startNoot","",0,63,1,0,doNothing,noEvent,wrapStyle)
   ,SUBMENU(setOutputType)
   ,OP("LED On",myLedOn,enterEvent)
   ,OP("LED Off",myLedOff,enterEvent)
+  ,OP("Save and reset",saveNVSSettingsReset,enterEvent)
   ,EXIT("<Back")
 );
 
@@ -171,10 +190,7 @@ void setup() {
 
   //Non-volatile storage init
   NVS.begin();
-  listeningMidiChannel = NVS.getInt("channel");
-  registerModule = NVS.getInt("regmodule");
-  registerOffSet = NVS.getInt("regoffset");
-  startNoot = NVS.getInt("startnoot");
+  loadNVSSettings();
   display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",listeningMidiChannel,registerModule,registerOffSet,startNoot);
   display.display(); 
 
@@ -183,7 +199,7 @@ void setup() {
   nav.timeOut=5;
   nav.idleTask=idle;//point a function to be used when menu is suspended 
   options->invertFieldKeys = true; 
-  
+
   //extenders init
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
