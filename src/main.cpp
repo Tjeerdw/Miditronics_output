@@ -168,14 +168,8 @@ void setup() {
   registerModule = NVS.getInt("regmodule");
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
-  display.println("CH/mod/off/nut:");
-  display.print(listeningMidiChannel);
-  display.print("/");
-  display.print(registerModule);
-  display.print("/");
-  display.print(registerOffSet);
-  display.print("/");
-  display.println(startNoot);
+  display.println("CH | mod | off | nut");
+  display.printf("%02d | %d   | %02d  | %02d\n",listeningMidiChannel,registerModule,registerOffSet,startNoot);
   display.display(); 
 
   //Navigation
@@ -187,9 +181,7 @@ void setup() {
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
   extendersInit(totaalModuleKanalen);
-  display.print("found ");
-  display.print(totaalModuleKanalen);
-  display.println(" outputs");
+  display.printf("found %d outputs\n",totaalModuleKanalen);
   display.display();  
 
   //Midi init, listen Omni
@@ -200,9 +192,7 @@ void setup() {
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
   MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
-
-  delay(2000);
-
+  delay(3000);
 }
 
 void loop() {
