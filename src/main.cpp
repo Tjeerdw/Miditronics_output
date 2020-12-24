@@ -173,8 +173,7 @@ void setup() {
   registerModule = NVS.getInt("regmodule");
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
-  display.println("CH | mod | off | nut");
-  display.printf("%02d | %d   | %02d  | %02d\n",listeningMidiChannel,registerModule,registerOffSet,startNoot);
+  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",listeningMidiChannel,registerModule,registerOffSet,startNoot);
   display.display(); 
 
   //Navigation
