@@ -3,8 +3,10 @@
 
 #include <Arduino.h>
 
-//turn on serial debugging
-#define SERIALDEBUG 
+//turn on serial debugging or midi, please choose one
+//dont forget to change static const long BaudRate = 115200; in serialMIDI.h
+//#define SERIALDEBUG  
+#define SERIALMIDI
 
 //OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels

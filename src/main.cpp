@@ -13,7 +13,12 @@
 #include <ArduinoNvs.h>
 
 //config midi instance on serial 2
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+#ifdef SERIALMIDI
+  MIDI_CREATE_INSTANCE(HardwareSerial, Serial, MIDI);
+#else  
+  MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+#endif
+
 //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
 
 //Persistent variables through EEPROM
@@ -188,10 +193,12 @@ void setup() {
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN);
   pinMode(MIDI_IN_DE_PIN, OUTPUT);
   digitalWrite(MIDI_IN_DE_PIN, LOW); //Receiver enable 
+  MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
+  MIDI.turnThruOff();
   MIDI.setHandleNoteOn(handleNoteOn);
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
-  MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
+ 
   delay(3000);
 }
 
