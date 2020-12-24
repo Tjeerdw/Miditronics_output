@@ -165,7 +165,9 @@ void setup() {
   display.display(); 
 
   //USB serial init
+#ifdef SERIALDEBUG
   Serial.begin(115200);
+#endif
 
   //Non-volatile storage init
   NVS.begin();
@@ -189,10 +191,13 @@ void setup() {
   display.display();  
 
   //Midi init, listen Omni
-  Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN);
+  //Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   pinMode(MIDI_IN_DE_PIN, OUTPUT);
   digitalWrite(MIDI_IN_DE_PIN, LOW); //Receiver enable 
   MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
+#ifdef SERIALMIDI
+  Serial.begin(115200);
+#endif
   MIDI.turnThruOff();
   MIDI.setHandleNoteOn(handleNoteOn);
   MIDI.setHandleNoteOff(handleNoteOff);
