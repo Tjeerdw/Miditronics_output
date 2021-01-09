@@ -5,8 +5,8 @@
 
 //turn on serial debugging or midi, please choose one
 //dont forget to change static const long BaudRate = 115200; in serialMIDI.h
-//#define SERIALDEBUG  
-#define SERIALMIDI
+#define SERIALDEBUG  
+//#define SERIALMIDI
 
 //OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -41,11 +41,11 @@
 #define fontY 10
 
 //Midi-Serial
-#define MIDI_IN_RX_PIN 9
-#define MIDI_IN_TX_PIN 10
-#define MIDI_IN_DE_PIN 11
+#define MIDI_IN_RX_PIN 18
+#define MIDI_IN_TX_PIN 19
+#define MIDI_IN_DE_PIN 27
 #define MIDI_TH_RX_PIN 16
 #define MIDI_TH_TX_PIN 17
-#define MIDI_TH_DE_PIN 7
+#define MIDI_TH_DE_PIN 4
 
 #endif
