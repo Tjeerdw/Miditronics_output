@@ -28,31 +28,40 @@ uint8_t extendersCount(){
 }
 
 
-void extendersInit(uint8_t channelNumbers){
+void extendersInit(uint8_t channelNumbers, uint8_t isThisAnOutputModule){
+    
+    uint8_t IOsetting = INPUT; //default to input
+    if (isThisAnOutputModule){
+        IOsetting = OUTPUT;}
+    
+
+
 
     if(channelNumbers>=32){
         ext1.begin(ADDRESS_EXT1, &extenders_I2C);
         ext2.begin(ADDRESS_EXT2, &extenders_I2C);
         for(int i =0;i<16;i++){ 
-            ext1.pinMode(i, OUTPUT);
+            ext1.pinMode(i, IOsetting);
             }
         for(int i =0;i<16;i++){
-            ext2.pinMode(i, OUTPUT);
+            ext2.pinMode(i, IOsetting);
             }
     }
     if(channelNumbers>=64){
         ext3.begin(ADDRESS_EXT3, &extenders_I2C);
         ext4.begin(ADDRESS_EXT4, &extenders_I2C);
         for(int i =0;i<16;i++){
-            ext3.pinMode(i, OUTPUT);
+            ext3.pinMode(i, IOsetting);
             }
         for(int i =0;i<16;i++){
-            ext4.pinMode(i, OUTPUT);
+            ext4.pinMode(i, IOsetting);
             }
     }
-      //TODO SET ALL OUTPUTs LOW
-    for (int i=1; i<channelNumbers; i++){
-        setOutput(i,0);
+
+    if(isThisAnOutputModule){ //if it is an output module, set al outputs to 0
+        for (int i=1; i<channelNumbers; i++){
+            setOutput(i,0);
+        }
     }
     
 }

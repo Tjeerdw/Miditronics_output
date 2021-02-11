@@ -22,7 +22,7 @@
 //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
 
 //Persistent variables through EEPROM
-uint8_t listeningMidiChannel=1;     // to be fetched from
+uint8_t MidiChannel=1;     // to be fetched from
 bool isRegisterModule = false;    // if not register, it must be notenmodule
 bool isOutputModule = false;
 uint8_t registerOffSet = 0;         //registeroffset in geval van extra registermodule
@@ -46,14 +46,14 @@ keyMap joystickBtn_map[] = {
 keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
 void loadNVSSettings(){
-  listeningMidiChannel = NVS.getInt("channel");
+  MidiChannel = NVS.getInt("channel");
   isRegisterModule = NVS.getInt("regmodule");
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
 }
 
 void saveNVSSettingsReset(){
-  NVS.setInt("channel",listeningMidiChannel);
+  NVS.setInt("channel",MidiChannel);
   NVS.setInt("regmodule",isRegisterModule);
   NVS.setInt("regoffset",registerOffSet);
   NVS.setInt("startnoot", startNoot);
@@ -77,7 +77,7 @@ TOGGLE(isRegisterModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doEx
 );
 
 MENU(mainMenu,"--------Menu---------",doNothing,noEvent,wrapStyle
-  ,FIELD(listeningMidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
+  ,FIELD(MidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
   ,FIELD(registerOffSet,"registerOffSet","",0,63,1,0,doNothing,noEvent,wrapStyle)
   ,FIELD(startNoot,"startNoot","",0,63,1,0,doNothing,noEvent,wrapStyle)
   ,SUBMENU(setOutputType)
@@ -200,7 +200,7 @@ void setup() {
   //Non-volatile storage init
   NVS.begin();
   loadNVSSettings();
-  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",listeningMidiChannel,isRegisterModule,registerOffSet,startNoot);
+  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",MidiChannel,isRegisterModule,registerOffSet,startNoot);
   display.display(); 
 
   //Navigation
@@ -212,15 +212,18 @@ void setup() {
   //extenders init
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
-  extendersInit(totaalModuleKanalen);
+  extendersInit(totaalModuleKanalen,isOutputModule);
   display.printf("found %d GPIO\n",totaalModuleKanalen);
   display.display();  
 
   //Midi init, listen Omni
   //Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   pinMode(MIDI_IN_DE_PIN, OUTPUT);
-  digitalWrite(MIDI_IN_DE_PIN, LOW); //Receiver enable 
-  MIDI.begin(listeningMidiChannel); //luister op opgegeven kanaal
+  if (isOutputModule){
+    digitalWrite(MIDI_IN_DE_PIN, LOW);} //Receiver enable 
+  else{
+    digitalWrite(MIDI_IN_DE_PIN, HIGH);} //transmitter enable
+  MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
 #ifdef SERIALMIDI
   Serial.begin(115200);
@@ -234,12 +237,16 @@ void setup() {
 }
 
 void loop() {
-
   nav.doInput();
   if (nav.changed(0)) {//only draw if changed
     nav.doOutput();
     display.display();
   } 
   //handle incoming midi messages
-  MIDI.read();
+  if (isOutputModule){
+    MIDI.read();}
+  else{
+    
+    }
+  
 }
