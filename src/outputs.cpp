@@ -29,6 +29,7 @@ uint8_t extendersCount(){
 
 
 void extendersInit(uint8_t channelNumbers){
+
     if(channelNumbers>=32){
         ext1.begin(ADDRESS_EXT1, &extenders_I2C);
         ext2.begin(ADDRESS_EXT2, &extenders_I2C);
@@ -50,7 +51,7 @@ void extendersInit(uint8_t channelNumbers){
             }
     }
       //TODO SET ALL OUTPUTs LOW
-    for (int i=1; i<64; i++){
+    for (int i=1; i<channelNumbers; i++){
         setOutput(i,0);
     }
     
