@@ -23,7 +23,8 @@
 
 //Persistent variables through EEPROM
 uint8_t listeningMidiChannel=1;     // to be fetched from
-bool registerModule = false;    // if not register, it must be notenmodule
+bool isRegisterModule = false;    // if not register, it must be notenmodule
+bool isOutputModule = false;
 uint8_t registerOffSet = 0;         //registeroffset in geval van extra registermodule
 uint8_t startNoot = 36;             //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
 
@@ -41,20 +42,19 @@ keyMap joystickBtn_map[] = {
   { -BUT_RIGHT, defaultNavCodes[enterCmd].ch} ,
   { -BUT_DOWN, defaultNavCodes[upCmd].ch} ,
   { -BUT_UP, defaultNavCodes[downCmd].ch}  ,
-  { -BUT_LEFT, defaultNavCodes[escCmd].ch}  ,
-};
+}; 
 keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
 void loadNVSSettings(){
   listeningMidiChannel = NVS.getInt("channel");
-  registerModule = NVS.getInt("regmodule");
+  isRegisterModule = NVS.getInt("regmodule");
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
 }
 
 void saveNVSSettingsReset(){
   NVS.setInt("channel",listeningMidiChannel);
-  NVS.setInt("regmodule",registerModule);
+  NVS.setInt("regmodule",isRegisterModule);
   NVS.setInt("regoffset",registerOffSet);
   NVS.setInt("startnoot", startNoot);
   ESP.restart();
@@ -71,7 +71,7 @@ result myLedOff() {
 
 
 
-TOGGLE(registerModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doExit,enterEvent,noStyle
+TOGGLE(isRegisterModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doExit,enterEvent,noStyle
   ,VALUE("Noten",false,doNothing,noEvent)
   ,VALUE("Registers",true,doNothing,noEvent)
 );
@@ -106,7 +106,11 @@ NAVROOT(nav,mainMenu,MAX_DEPTH,joystickBtns,out);
 //excecute on menu exit
 result idle(menuOut& o,idleEvent e) {
   o.setCursor(0,0);
-  o.print(F("Miditronics Output"));
+  if (isOutputModule){
+    o.print(F("Miditronics Output"));}
+  else{
+    o.print(F("Miditronics input"));}
+  
   o.setCursor(0,1);
   o.print(F("Press button for menu"));
   return proceed;
@@ -114,7 +118,7 @@ result idle(menuOut& o,idleEvent e) {
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
-  if (!registerModule) {  
+  if (!isRegisterModule) {  
     velocity = 127; //ter ere van Hendrikus
     pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
     setOutput(pitch,HIGH); //schakel noot in
@@ -123,7 +127,7 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
 
 //note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
-  if (!registerModule) {
+  if (!isRegisterModule) {
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
@@ -134,7 +138,7 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
-  if (registerModule) {
+  if (isRegisterModule) {
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
@@ -175,12 +179,17 @@ void setup() {
     Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   } 
+  pinMode(IO_Identity,INPUT);
+  isOutputModule = digitalRead(IO_Identity);
 
   //first little text test
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
-  display.println("Miditronics Output");
+  if (isOutputModule){
+    display.println("Miditronics Output");}
+  else{
+    display.println("Miditronics Input");}
   display.display(); 
 
   //USB serial init
@@ -191,7 +200,7 @@ void setup() {
   //Non-volatile storage init
   NVS.begin();
   loadNVSSettings();
-  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",listeningMidiChannel,registerModule,registerOffSet,startNoot);
+  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",listeningMidiChannel,isRegisterModule,registerOffSet,startNoot);
   display.display(); 
 
   //Navigation
@@ -204,7 +213,7 @@ void setup() {
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
   extendersInit(totaalModuleKanalen);
-  display.printf("found %d outputs\n",totaalModuleKanalen);
+  display.printf("found %d GPIO\n",totaalModuleKanalen);
   display.display();  
 
   //Midi init, listen Omni
