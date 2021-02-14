@@ -102,8 +102,10 @@ void setOutput(uint8_t outputNumber, uint8_t outputValue){
         ext4.digitalWrite(outputNumber-48,outputValue);
 }
 
-uint32_t readInputs(uint8_t channelNumbers){
-    uint64_t inputbuffertje = 0;
-    inputbuffertje = ext1.readGPIOAB();
-    return inputbuffertje;
+void readInputs(uint8_t channelNumbers, uint16_t inputbuffertje[]){
+    inputbuffertje[0]  = ~ext1.readGPIOAB();
+    inputbuffertje[1]  = ~ext2.readGPIOAB();
+    inputbuffertje[2]  = ~ext3.readGPIOAB();
+    inputbuffertje[3]  = ~ext4.readGPIOAB();
+
 }
