@@ -246,14 +246,13 @@ void loop() {
   } 
   //handle incoming midi messages
   if (isOutputModule){
-    MIDI.read();}
+    MIDI.read();} //read incoming messages and let handler do the rest
+  
   else{//must be input module
-    
     previousInputs[0] = actualInputs[0];//kan vast met een kortere assignment
     previousInputs[1] = actualInputs[1];
     previousInputs[2] = actualInputs[2];
     previousInputs[3] = actualInputs[3];
-
     readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
     
     for (int i=0;i<4;i++){ //go through 4 input buffers
@@ -262,30 +261,28 @@ void loop() {
       if (bitsOn){
         for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOn & (1<<j)){
+            uint8_t GPIO = bitToGPIO(j+(16*i));
+            MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
             #ifdef SERIALDEBUG
-            Serial.print(bitToGPIO(j+(16*i)));
+            Serial.print(GPIO);
             Serial.println(" on");
             #endif
-
           }
         }
       }
       if (bitsOff){
        for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOff & (1<<j)){
+            uint8_t GPIO = bitToGPIO(j+(16*i));
+            MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
             #ifdef SERIALDEBUG
-            Serial.print(bitToGPIO(j+(16*i)));
+            Serial.print(GPIO);
             Serial.println(" off");
             #endif
-
           }
         }
       }
     }
-
- 
-
-    // TODO compare with previous state
     // TODO send not changes for the changed inputs
   }
 }
