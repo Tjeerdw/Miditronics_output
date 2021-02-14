@@ -263,8 +263,8 @@ void loop() {
         for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOn & (1<<j)){
             #ifdef SERIALDEBUG
-            Serial.println(bitToGPIO(j+(16*i)));
-            //Serial.printf ("%d is on\n",j+(16*i));
+            Serial.print(bitToGPIO(j+(16*i)));
+            Serial.println(" on");
             #endif
 
           }
@@ -274,7 +274,8 @@ void loop() {
        for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOff & (1<<j)){
             #ifdef SERIALDEBUG
-            Serial.printf ("%d is off\n",j+(16*i));
+            Serial.print(bitToGPIO(j+(16*i)));
+            Serial.println(" off");
             #endif
 
           }
