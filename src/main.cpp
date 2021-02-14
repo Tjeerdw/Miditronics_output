@@ -256,17 +256,34 @@ void loop() {
 
     readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
     
-    //XOR that shit
+    for (int i=0;i<4;i++){ //go through 4 input buffers
+      uint16_t bitsOn  = ~previousInputs[i] &  actualInputs[i]; //check for new bits high
+      uint16_t bitsOff =  previousInputs[i] & ~actualInputs[i]; //check for new bits low
+      if (bitsOn){
+        for (int j=0;j<16;j++){ //go though 16 bits in input buffer
+          if (bitsOn & (1<<j)){
+            #ifdef SERIALDEBUG
+            Serial.println(bitToGPIO(j+(16*i)));
+            //Serial.printf ("%d is on\n",j+(16*i));
+            #endif
 
-    //Serial.println(actualInputs[0], BIN);
-    //Serial.println(actualInputs[1], BIN);
-    //Serial.println(actualInputs[2], BIN);
-    //Serial.println(actualInputs[3], BIN);
-    
-  
-    
-   
-    
+          }
+        }
+      }
+      if (bitsOff){
+       for (int j=0;j<16;j++){ //go though 16 bits in input buffer
+          if (bitsOff & (1<<j)){
+            #ifdef SERIALDEBUG
+            Serial.printf ("%d is off\n",j+(16*i));
+            #endif
+
+          }
+        }
+      }
+    }
+
+ 
+
     // TODO compare with previous state
     // TODO send not changes for the changed inputs
   }

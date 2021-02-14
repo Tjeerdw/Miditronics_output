@@ -109,3 +109,24 @@ void readInputs(uint8_t channelNumbers, uint16_t inputbuffertje[]){
     inputbuffertje[3]  = ~ext4.readGPIOAB();
 
 }
+
+uint8_t bitToGPIO(uint8_t bit){
+    uint8_t GPIO=0;
+    if     (bit <= 7)
+        GPIO = 8-bit;
+    else if(bit <= 15)
+        GPIO = bit+1;
+    else if(bit <= 23)
+        GPIO = 8-(bit-16)+16;
+    else if(bit <= 31)
+        GPIO = bit+1;
+    else if(bit <= 39)
+        GPIO =8-(bit-32)+32;
+    else if(bit <= 47)
+        GPIO = bit+1;
+    else if(bit <= 55)
+        GPIO = 8-(bit-48)+48;
+    else if(bit <= 63)
+        GPIO = bit+1;
+    return GPIO;
+}
