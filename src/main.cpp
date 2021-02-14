@@ -31,6 +31,8 @@ uint8_t startNoot = 36;             //midi-nootnummer waarop deze module moet st
 const int controlChangeAan = 80;//control change waarde aan
 const int controlChangeUit = 81;//control change waarde uit
 uint8_t totaalModuleKanalen = 0;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
+uint16_t actualInputs[4] = {0,0,0,0};
+uint16_t previousInputs[4] = {0,0,0,0};
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 
 using namespace Menu;
@@ -245,8 +247,27 @@ void loop() {
   //handle incoming midi messages
   if (isOutputModule){
     MIDI.read();}
-  else{
+  else{//must be input module
     
-    }
+    previousInputs[0] = actualInputs[0];//kan vast met een kortere assignment
+    previousInputs[1] = actualInputs[1];
+    previousInputs[2] = actualInputs[2];
+    previousInputs[3] = actualInputs[3];
+
+    readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
+    
+    //XOR that shit
+
+    //Serial.println(actualInputs[0], BIN);
+    //Serial.println(actualInputs[1], BIN);
+    //Serial.println(actualInputs[2], BIN);
+    //Serial.println(actualInputs[3], BIN);
+    
   
+    
+   
+    
+    // TODO compare with previous state
+    // TODO send not changes for the changed inputs
+  }
 }
