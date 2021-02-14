@@ -34,31 +34,41 @@ void extendersInit(uint8_t channelNumbers, uint8_t isThisAnOutputModule){
     if (isThisAnOutputModule){
         IOsetting = OUTPUT;}
     
-
-
-
     if(channelNumbers>=32){
         ext1.begin(ADDRESS_EXT1, &extenders_I2C);
         ext2.begin(ADDRESS_EXT2, &extenders_I2C);
         for(int i =0;i<16;i++){ 
             ext1.pinMode(i, IOsetting);
+            if (!isThisAnOutputModule){
+                ext1.pullUp(i,HIGH);
             }
+        }
         for(int i =0;i<16;i++){
             ext2.pinMode(i, IOsetting);
+            if (!isThisAnOutputModule){
+                ext2.pullUp(i,HIGH);
             }
+        }
     }
     if(channelNumbers>=64){
         ext3.begin(ADDRESS_EXT3, &extenders_I2C);
         ext4.begin(ADDRESS_EXT4, &extenders_I2C);
         for(int i =0;i<16;i++){
             ext3.pinMode(i, IOsetting);
+            if (!isThisAnOutputModule){
+                ext3.pullUp(i,HIGH);
             }
+        }
         for(int i =0;i<16;i++){
             ext4.pinMode(i, IOsetting);
+            if (!isThisAnOutputModule){
+                ext4.pullUp(i,HIGH);
             }
+        }
     }
 
     if(isThisAnOutputModule){ //if it is an output module, set al outputs to 0
+        
         for (int i=1; i<channelNumbers; i++){
             setOutput(i,0);
         }
@@ -90,4 +100,10 @@ void setOutput(uint8_t outputNumber, uint8_t outputValue){
         ext4.digitalWrite(8-(outputNumber-48),outputValue);
     else if(outputNumber <= 64)
         ext4.digitalWrite(outputNumber-48,outputValue);
+}
+
+uint32_t readInputs(uint8_t channelNumbers){
+    uint64_t inputbuffertje = 0;
+    inputbuffertje = ext1.readGPIOAB();
+    return inputbuffertje;
 }
