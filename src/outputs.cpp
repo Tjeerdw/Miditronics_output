@@ -87,19 +87,19 @@ void setOutput(uint8_t outputNumber, uint8_t outputValue){
     if (outputNumber <= 8)
         ext1.digitalWrite(8-outputNumber,outputValue);
     else if(outputNumber <= 16)
-        ext1.digitalWrite(outputNumber-16,outputValue);
+        ext1.digitalWrite(outputNumber-17,outputValue);
     else if(outputNumber <= 24)
         ext2.digitalWrite(8-(outputNumber-16),outputValue);
     else if(outputNumber <= 32)
-        ext2.digitalWrite(outputNumber-16,outputValue);
+        ext2.digitalWrite(outputNumber-17,outputValue);
     else if(outputNumber <= 40)
         ext3.digitalWrite(8-(outputNumber-32),outputValue);
     else if(outputNumber <= 48)
-        ext3.digitalWrite(outputNumber-32,outputValue);
+        ext3.digitalWrite(outputNumber-33,outputValue);
     else if(outputNumber <= 56)
         ext4.digitalWrite(8-(outputNumber-48),outputValue);
     else if(outputNumber <= 64)
-        ext4.digitalWrite(outputNumber-48,outputValue);
+        ext4.digitalWrite(outputNumber-49,outputValue);
 }
 
 void readInputs(uint8_t channelNumbers, uint16_t inputbuffertje[]){
