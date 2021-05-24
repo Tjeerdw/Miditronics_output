@@ -122,8 +122,10 @@ result idle(menuOut& o,idleEvent e) {
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
   if (!isRegisterModule) {  
     velocity = 127; //ter ere van Hendrikus
-    pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
-    setOutput(pitch,HIGH); //schakel noot in
+    if ((pitch>=startNoot) && (pitch<=eindNoot)) {
+      pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
+      setOutput(pitch,HIGH); //schakel noot in
+    }
   }
 }
 
