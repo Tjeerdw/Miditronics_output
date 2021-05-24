@@ -62,16 +62,6 @@ void saveNVSSettingsReset(){
   ESP.restart();
 }
 
-result myLedOn() {
-  setOutput(1,1);
-  return proceed;
-}
-result myLedOff() {
-  setOutput(1,0);
-  return proceed;
-}
-
-
 
 TOGGLE(isRegisterModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doExit,enterEvent,noStyle
   ,VALUE("Noten",false,doNothing,noEvent)
@@ -83,8 +73,6 @@ MENU(mainMenu,"--------Menu---------",doNothing,noEvent,wrapStyle
   ,FIELD(registerOffSet,"registerOffSet","",0,63,1,0,doNothing,noEvent,wrapStyle)
   ,FIELD(startNoot,"startNoot","",0,63,1,0,doNothing,noEvent,wrapStyle)
   ,SUBMENU(setOutputType)
-  ,OP("LED On",myLedOn,enterEvent)
-  ,OP("LED Off",myLedOff,enterEvent)
   ,OP("Save and reset",saveNVSSettingsReset,enterEvent)
   ,EXIT("<Back")
 );
