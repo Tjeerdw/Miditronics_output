@@ -24,6 +24,10 @@ uint8_t extendersCount(){
             nDevices++;
         }
     }
+    #ifdef SERIALDEBUG
+    Serial.print("extenders found: ");
+    Serial.println(nDevices); 
+    #endif
     return nDevices;
 }
 
@@ -103,10 +107,14 @@ void setOutput(uint8_t outputNumber, uint8_t outputValue){
 }
 
 void readInputs(uint8_t channelNumbers, uint16_t inputbuffertje[]){
-    inputbuffertje[0]  = ~ext1.readGPIOAB();
-    inputbuffertje[1]  = ~ext2.readGPIOAB();
-    inputbuffertje[2]  = ~ext3.readGPIOAB();
-    inputbuffertje[3]  = ~ext4.readGPIOAB();
+    if(channelNumbers>=32){
+        inputbuffertje[0]  = ~ext1.readGPIOAB();
+        inputbuffertje[1]  = ~ext2.readGPIOAB();
+    }
+    if(channelNumbers>=64){
+        inputbuffertje[2]  = ~ext3.readGPIOAB();
+        inputbuffertje[3]  = ~ext4.readGPIOAB();
+    }
 
 }
 

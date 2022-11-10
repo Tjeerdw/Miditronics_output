@@ -26,12 +26,13 @@
 #define ADDRESS_EXT4 3
 
 //Input Output module identification
-#define IO_Identity 34 //high=output module, low = input module
+#define IO_Identity 13 //high=output module, low = input module
 
 //buttons
 #define BUT_UP      35
 #define BUT_DOWN    36
 #define BUT_RIGHT   39
+#define BUT_LEFT    34
 #define NAV_BUTTONS_INPUT_PULLUP
 #define TOTAL_NAV_BUTTONS 4
 

@@ -187,6 +187,7 @@ void setup() {
   //USB serial init
 #ifdef SERIALDEBUG
   Serial.begin(115200);
+  Serial.println("debug mode on");
 #endif
 
   //Non-volatile storage init
@@ -229,6 +230,7 @@ void setup() {
 }
 
 void loop() {
+  delay(1);
   nav.doInput();
   if (nav.changed(0)) {//only draw if changed
     nav.doOutput();
