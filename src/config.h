@@ -33,8 +33,6 @@
 #define BUT_DOWN    36
 #define BUT_RIGHT   39
 #define BUT_LEFT    34
-#define NAV_BUTTONS_INPUT_PULLUP
-#define TOTAL_NAV_BUTTONS 4
 
 //Menu
 //Default font: lcd5x7

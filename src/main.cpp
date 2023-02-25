@@ -6,9 +6,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Fonts/FreeMono9pt7b.h>
-#include <menu.h>
-#include <menuIO/adafruitGfxOut.h>
-#include <menuIO/keyIn.h>
 #include <MIDI.h>
 #include <ArduinoNvs.h>
 
@@ -22,11 +19,11 @@
 //config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
 
 //Persistent variables through EEPROM
-uint8_t MidiChannel=1;     // to be fetched from
-bool isRegisterModule = false;    // if not register, it must be notenmodule
-bool isOutputModule = false;
-uint8_t registerOffSet = 0;         //registeroffset in geval van extra registermodule
-uint8_t startNoot = 36;             //midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3)
+uint8_t MidiChannel=1;          
+bool isRegisterModule = false;  // TODO: Make Enum
+bool isOutputModule = false;    // TODO: Make Enum
+uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
+uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (23 = C1, 36 = C2, 49 = C3) TODO: make array with notes
 
 const int controlChangeAan = 80;//control change waarde aan
 const int controlChangeUit = 81;//control change waarde uit
@@ -35,17 +32,9 @@ uint16_t actualInputs[4] = {0,0,0,0};
 uint16_t previousInputs[4] = {0,0,0,0};
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 
-using namespace Menu;
 
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
-
-keyMap joystickBtn_map[] = {
-  { -BUT_RIGHT, defaultNavCodes[enterCmd].ch} ,
-  { -BUT_DOWN, defaultNavCodes[upCmd].ch} ,
-  { -BUT_UP, defaultNavCodes[downCmd].ch}  ,
-}; 
-keyIn<TOTAL_NAV_BUTTONS> joystickBtns(joystickBtn_map);//the input driver
 
 void loadNVSSettings(){
   MidiChannel = NVS.getInt("channel");
@@ -60,50 +49,6 @@ void saveNVSSettingsReset(){
   NVS.setInt("regoffset",registerOffSet);
   NVS.setInt("startnoot", startNoot);
   ESP.restart();
-}
-
-
-TOGGLE(isRegisterModule,setOutputType,"type: ",doNothing,noEvent ,noStyle//,doExit,enterEvent,noStyle
-  ,VALUE("Noten",false,doNothing,noEvent)
-  ,VALUE("Registers",true,doNothing,noEvent)
-);
-
-MENU(mainMenu,"--------Menu---------",doNothing,noEvent,wrapStyle
-  ,FIELD(MidiChannel,"Channel","",1,16,1,0,doNothing,noEvent,wrapStyle)
-  ,FIELD(registerOffSet,"registerOffSet","",0,63,1,0,doNothing,noEvent,wrapStyle)
-  ,FIELD(startNoot,"startNoot","",0,63,1,0,doNothing,noEvent,wrapStyle)
-  ,SUBMENU(setOutputType)
-  ,OP("Save and reset",saveNVSSettingsReset,enterEvent)
-  ,EXIT("<Back")
-);
-
-const colorDef<uint16_t> colors[6] MEMMODE={
-  {{BLACK,WHITE},{BLACK,WHITE,WHITE}},//bgColor
-  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//fgColor
-  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//valColor
-  {{WHITE,BLACK},{WHITE,BLACK,BLACK}},//unitColor
-  {{WHITE,BLACK},{BLACK,BLACK,BLACK}},//cursorColor
-  {{WHITE,BLACK},{BLACK,WHITE,WHITE}},//titleColor
-};
-
-MENU_OUTPUTS(out,MAX_DEPTH
-  ,ADAGFX_OUT(display,colors,fontX,fontY,{0,0,SCREEN_WIDTH/fontX,SCREEN_HEIGHT/fontY})
-  ,NONE
-);
-
-NAVROOT(nav,mainMenu,MAX_DEPTH,joystickBtns,out);
-
-//excecute on menu exit
-result idle(menuOut& o,idleEvent e) {
-  o.setCursor(0,0);
-  if (isOutputModule){
-    o.print(F("Miditronics Output"));}
-  else{
-    o.print(F("Miditronics input"));}
-  
-  o.setCursor(0,1);
-  o.print(F("Press button for menu"));
-  return proceed;
 }
 
 //note-On message afhandelen
@@ -172,7 +117,7 @@ void setup() {
     for(;;); // Don't proceed, loop forever
   } 
   pinMode(IO_Identity,INPUT);
-  isOutputModule = digitalRead(IO_Identity);
+  isOutputModule = digitalRead(IO_Identity); //read hardware type
 
   //first little text test
   display.clearDisplay();
@@ -196,18 +141,17 @@ void setup() {
   display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %02d\n",MidiChannel,isRegisterModule,registerOffSet,startNoot);
   display.display(); 
 
-  //Navigation
-  joystickBtns.begin();
-  nav.timeOut=5;
-  nav.idleTask=idle;//point a function to be used when menu is suspended 
-  options->invertFieldKeys = true; 
-
   //extenders init
   extendersI2Cinit();
   totaalModuleKanalen = extendersCount()*16;
   extendersInit(totaalModuleKanalen,isOutputModule);
   display.printf("found %d GPIO\n",totaalModuleKanalen);
   display.display();  
+
+  #ifdef SERIALDEBUG
+  display.printf("SERIAL DEBUG ON\n");
+  display.display();
+  #endif
 
   //Midi init, listen Omni
   //Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
@@ -226,16 +170,11 @@ void setup() {
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
  
-  delay(3000);
+  delay(2000);
 }
 
 void loop() {
   delay(1);
-  nav.doInput();
-  if (nav.changed(0)) {//only draw if changed
-    nav.doOutput();
-    display.display();
-  } 
   //handle incoming midi messages
   if (isOutputModule){
     MIDI.read();} //read incoming messages and let handler do the rest
@@ -275,6 +214,6 @@ void loop() {
         }
       }
     }
-    // TODO send not changes for the changed inputs
+    // TODO: send not changes for the changed inputs
   }
 }
