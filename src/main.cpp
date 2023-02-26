@@ -81,6 +81,23 @@ void saveNVSSettingsReset(){
   ESP.restart();
 }
 
+void writeIdleScreen(){
+  display.clearDisplay();
+  display.setTextSize(4);
+  display.setCursor(0,0);
+  display.printf("CH:%02d\n",MidiChannel);
+  display.display();
+}
+
+void writeNoteOnScreen(uint8_t lastnote){
+  display.setTextSize(4);
+  display.setCursor(0,32);
+  display.print("    ");
+  display.setCursor(0,32);
+  display.print(noteNames[lastnote]);
+  display.display();
+}
+
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
   if (moduletype==Noten) {  
@@ -88,6 +105,9 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
       setOutput(pitch,HIGH); //schakel noot in
+      if (!MenuActive){
+        writeNoteOnScreen(pitch);
+      }
     }
   }
 }
@@ -138,13 +158,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
     }
   }   
 }
-void writeIdleScreen(){
-  display.clearDisplay();
-  display.setTextSize(4);
-  display.setCursor(0,0);
-  display.printf("CH:%02d\n",MidiChannel);
-  display.display();
-}
+
 
 void drawMenu(){
   lastMenuTime = millis();
@@ -192,7 +206,7 @@ void setup() {
 
   //first little text test
   display.clearDisplay();
-  display.setTextColor(WHITE);
+  display.setTextColor(WHITE,BLACK);
   display.setCursor(0, 0);
   if (isOutputModule){
     display.println("Miditronics Output");}
@@ -370,6 +384,7 @@ void loop() {
           if (bitsOn & (1<<j)){
             uint8_t GPIO = bitToGPIO(j+(16*i));
             MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
+            writeNoteOnScreen((GPIO-1)+startNoot);
             #ifdef SERIALDEBUG
             Serial.print(GPIO);
             Serial.println(" on");
