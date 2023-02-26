@@ -20,11 +20,15 @@
 
 //Persistent variables through EEPROM
 uint8_t MidiChannel=1;          
-bool isRegisterModule = false;  // TODO: Make Enum
+
+enum moduletypes { NOTEN, REGISTER };
+char moduletypeNames[2][15] = { "Noten", "Register"};
+moduletypes moduletype = NOTEN;
+
 bool isOutputModule = false;    // TODO: Make Enum
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
-char NotesArray[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
+char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
                             "C0","C#0","D0","D#0","E0","F0","F#0","G0","G#0","A0","A#0","B0",
                             "C1","C#1","D1","D#1","E1","F1","F#1","G1","G#1","A1","A#1","B1",
                             "C2","C#2","D2","D#2","E2","F2","F#2","G2","G#2","A2","A#2","B2",
@@ -51,14 +55,15 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
 void loadNVSSettings(){
   MidiChannel = NVS.getInt("channel");
-  isRegisterModule = NVS.getInt("regmodule");
+  moduletype = (moduletypes)NVS.getInt("regmodule"); //TODO: test this
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
+  
 }
 
 void saveNVSSettingsReset(){
   NVS.setInt("channel",MidiChannel);
-  NVS.setInt("regmodule",isRegisterModule);
+  NVS.setInt("regmodule",moduletype);
   NVS.setInt("regoffset",registerOffSet);
   NVS.setInt("startnoot", startNoot);
   ESP.restart();
@@ -66,7 +71,7 @@ void saveNVSSettingsReset(){
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
-  if (!isRegisterModule) {  
+  if (moduletype==NOTEN) {  
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
@@ -77,7 +82,7 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
 
 //note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
-  if (!isRegisterModule) {
+  if (moduletype==NOTEN) {
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
@@ -88,7 +93,7 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
-  if (isRegisterModule) {
+  if (moduletype==REGISTER) {
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
@@ -140,7 +145,7 @@ void drawMenu(){
   display.setCursor(10,8);
   display.print("Startnoot"); //todo alternate register setting
   display.setCursor(95,8);
-  display.print(NotesArray[startNoot]);
+  display.print(noteNames[startNoot]);
 
   display.setCursor(10,16);
   display.print("Module type");
@@ -182,7 +187,7 @@ void setup() {
   //Non-volatile storage init
   NVS.begin();
   loadNVSSettings();
-  display.printf("MIDI CH:%02d|module:%d\noffset:%02d |note: %s\n",MidiChannel,isRegisterModule,registerOffSet,NotesArray[startNoot]);
+  display.printf("MIDI kanaal: %02d\nModuletype: %s\nRegister offset: %02d\nStartnoot: %s\n",MidiChannel,moduletypeNames[moduletype],registerOffSet,noteNames[startNoot]);
   display.display(); 
 
   //extenders init
@@ -193,7 +198,7 @@ void setup() {
   display.display();  
 
   #ifdef SERIALDEBUG
-  display.printf("SERIAL DEBUG ON\n");
+  display.printf("!!!SERIAL DEBUG ON!!!\n");
   display.display();
   #endif
 
@@ -214,16 +219,14 @@ void setup() {
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
  
-  delay(2000);
+  delay(3000);
   writeIdleScreen();
   drawMenu();
 }
 
 void loop() {
-  
-  
-    //handle incoming midi messages
-  if (isOutputModule){
+   
+  if (isOutputModule){ //handle incoming midi messages
     MIDI.read();} //read incoming messages and let handler do the rest
   
   else{//must be input module
