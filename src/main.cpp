@@ -26,6 +26,13 @@ moduletypes moduletype = Noten;
 bool isOutputModule = false;
 bool MenuActive = false;
 bool MenuEditActive = false;
+bool menuButtonState = true;
+bool menuButtonlastState = true;
+unsigned long lastDebounceTime = 0;
+unsigned long lastMenuTime = 0;
+unsigned long debounceDelay = 50; 
+unsigned long menuTimout = 10000;
+
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
@@ -167,6 +174,10 @@ void setup() {
     Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   } 
+  pinMode(BUT_UP, INPUT);
+  pinMode(BUT_DOWN, INPUT);
+  pinMode(BUT_LEFT, INPUT);
+  pinMode(BUT_RIGHT, INPUT);
   pinMode(IO_Identity,INPUT);
   isOutputModule = digitalRead(IO_Identity); //read hardware type
 
@@ -223,11 +234,33 @@ void setup() {
  
   delay(3000);
   writeIdleScreen();
-  drawMenu();
 }
 
 void loop() {
-   
+  menuButtonlastState = menuButtonState;
+  menuButtonState =  digitalRead(BUT_RIGHT);
+  
+  if(menuButtonState != menuButtonlastState){
+    lastDebounceTime = millis();
+    
+  }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (menuButtonState == false){
+      MenuActive = true;
+      lastMenuTime = millis();
+      drawMenu();
+    }
+
+  }
+
+  while(MenuActive){
+    if (millis() - lastMenuTime > menuTimout){
+      MenuActive = false;
+      writeIdleScreen(); 
+    }
+
+  }
+
   if (isOutputModule){ //handle incoming midi messages
     MIDI.read();} //read incoming messages and let handler do the rest
   
