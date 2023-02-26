@@ -16,16 +16,14 @@
   MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 #endif
 
-//config (temp) variables for midi implementation, some are waiting on menu implementation and eeprom storage
-
 //Persistent variables through EEPROM
 uint8_t MidiChannel=1;          
 
-enum moduletypes { NOTEN, REGISTER };
+enum moduletypes { Noten, Register };
 char moduletypeNames[2][15] = { "Noten", "Register"};
-moduletypes moduletype = NOTEN;
+moduletypes moduletype = Noten;
 
-bool isOutputModule = false;    // TODO: Make Enum
+bool isOutputModule = false;
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
@@ -71,7 +69,7 @@ void saveNVSSettingsReset(){
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
-  if (moduletype==NOTEN) {  
+  if (moduletype==Noten) {  
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
@@ -82,7 +80,7 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
 
 //note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
-  if (moduletype==NOTEN) {
+  if (moduletype==Noten) {
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
@@ -93,7 +91,7 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
-  if (moduletype==REGISTER) {
+  if (moduletype==Register) {
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
