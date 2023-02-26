@@ -42,6 +42,8 @@ uint8_t totaalModuleKanalen = 0;   //definieert het aantal kanalen dat deze modu
 uint16_t actualInputs[4] = {0,0,0,0};
 uint16_t previousInputs[4] = {0,0,0,0};
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
+uint8_t menuCounter = 1;
+uint8_t numberOfMenuItems = 4;
 
 
 TwoWire display_I2C =  TwoWire(0);
@@ -125,7 +127,30 @@ void writeIdleScreen(){
   display.setCursor(0,0);
   display.printf("CH:%02d\n",MidiChannel);
   display.display();
+}
 
+void drawMenu(){
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(10,0);
+  display.print("Midi kanaal");
+  display.setCursor(95,0);
+  display.print(MidiChannel);
+
+  display.setCursor(10,8);
+  display.print("Startnoot"); //todo alternate register setting
+  display.setCursor(95,8);
+  display.print(NotesArray[startNoot]);
+
+  display.setCursor(10,16);
+  display.print("Module type");
+
+  display.setCursor(10,24);
+  display.print("Save & reboot");
+
+  display.setCursor(0,(menuCounter-1)*8);
+  display.print(">");
+  display.display();  
 }
 
 void setup() {
@@ -191,6 +216,7 @@ void setup() {
  
   delay(2000);
   writeIdleScreen();
+  drawMenu();
 }
 
 void loop() {
