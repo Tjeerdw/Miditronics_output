@@ -20,10 +20,12 @@
 uint8_t MidiChannel=1;          
 
 enum moduletypes { Noten, Register };
-char moduletypeNames[2][15] = { "Noten", "Register"};
+char moduletypeNames[2][6] = { "Noten", "Regis"};
 moduletypes moduletype = Noten;
 
 bool isOutputModule = false;
+bool MenuActive = false;
+bool MenuEditActive = false;
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
@@ -135,23 +137,25 @@ void writeIdleScreen(){
 void drawMenu(){
   display.clearDisplay();
   display.setTextSize(1);
-  display.setCursor(10,0);
+  display.setCursor(7,0);
   display.print("Midi kanaal");
   display.setCursor(95,0);
   display.print(MidiChannel);
 
-  display.setCursor(10,8);
+  display.setCursor(7,8);
   display.print("Startnoot"); //todo alternate register setting
   display.setCursor(95,8);
   display.print(noteNames[startNoot]);
 
-  display.setCursor(10,16);
+  display.setCursor(7,16);
   display.print("Module type");
+  display.setCursor(95,16);
+  display.print(moduletypeNames[moduletype]);
 
-  display.setCursor(10,24);
+  display.setCursor(7,24);
   display.print("Save & reboot");
 
-  display.setCursor(0,(menuCounter-1)*8);
+  display.setCursor(((int)MenuEditActive*88),(menuCounter-1)*8);
   display.print(">");
   display.display();  
 }
