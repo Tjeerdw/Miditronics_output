@@ -29,10 +29,10 @@
 #define IO_Identity 13 //high=output module, low = input module
 
 //buttons
-#define BUT_UP      35
-#define BUT_DOWN    36
-#define BUT_RIGHT   39
-#define BUT_LEFT    34
+#define BUT_UP_PIN      35
+#define BUT_DOWN_PIN    36
+#define BUT_RIGHT_PIN   39
+#define BUT_LEFT_PIN    34
 
 //Menu
 //Default font: lcd5x7
