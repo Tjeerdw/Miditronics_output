@@ -8,6 +8,7 @@
 #include <Fonts/FreeMono9pt7b.h>
 #include <MIDI.h>
 #include <ArduinoNvs.h>
+#include <EasyButton.h>
 
 //config midi instance on serial 2
 #ifdef SERIALMIDI
@@ -56,6 +57,10 @@ uint16_t previousInputs[4] = {0,0,0,0};
 uint8_t menuCounter = 1;
 uint8_t numberOfMenuItems = 4;
 
+EasyButton buttonLeft(BUT_LEFT_PIN,40,true,true);
+EasyButton buttonRight(BUT_RIGHT_PIN,40,true,true);
+EasyButton buttonUp(BUT_UP_PIN,40,true,true);
+EasyButton buttonDown(BUT_DOWN_PIN,40,true,true);
 
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
@@ -142,6 +147,8 @@ void writeIdleScreen(){
 }
 
 void drawMenu(){
+  lastMenuTime = millis();
+
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(7,0);
@@ -174,10 +181,12 @@ void setup() {
     Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   } 
-  pinMode(BUT_UP, INPUT);
-  pinMode(BUT_DOWN, INPUT);
-  pinMode(BUT_LEFT, INPUT);
-  pinMode(BUT_RIGHT, INPUT);
+
+  buttonLeft.begin();
+  buttonRight.begin();
+  buttonUp.begin();
+  buttonDown.begin();
+
   pinMode(IO_Identity,INPUT);
   isOutputModule = digitalRead(IO_Identity); //read hardware type
 
@@ -237,28 +246,110 @@ void setup() {
 }
 
 void loop() {
-  menuButtonlastState = menuButtonState;
-  menuButtonState =  digitalRead(BUT_RIGHT);
-  
-  if(menuButtonState != menuButtonlastState){
-    lastDebounceTime = millis();
-    
-  }
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    if (menuButtonState == false){
+  buttonRight.read();
+
+  if (buttonRight.wasPressed()){
       MenuActive = true;
       lastMenuTime = millis();
       drawMenu();
     }
 
-  }
+  while(MenuActive){ //just stay in the menu, nothing else to do
+    buttonDown.read();
+    buttonUp.read();
+    buttonLeft.read();
+    buttonRight.read();
 
-  while(MenuActive){
     if (millis() - lastMenuTime > menuTimout){
-      MenuActive = false;
+      MenuActive = false; //exit menu
+      menuCounter = 1;
+      MenuEditActive = false;
       writeIdleScreen(); 
     }
+    
+    if (MenuEditActive){
+      if (buttonLeft.wasPressed()){
+      MenuEditActive = false;
+      drawMenu();
+      }
+      else if (buttonUp.wasPressed()){
+        switch (menuCounter)
+        {
+        case 1:
+          if (MidiChannel<16){
+            MidiChannel++;
+            drawMenu();
+          }          
+          break;
+        case 2:
+          if (startNoot<(127-totaalModuleKanalen)){
+            startNoot++;
+            drawMenu();
+          }
+          break;
+        case 3:
+          moduletype = Noten;
+          drawMenu();
+          break;            
+        default:
+          break;
+        }
+      }
+      else if (buttonDown.wasPressed()){
+        switch (menuCounter)
+        {
+        case 1:
+          if (MidiChannel>0){
+            MidiChannel--;
+            drawMenu();
+          }          
+          break;
+        case 2:
+          if (startNoot>0){
+            startNoot--;
+            drawMenu();
+          }
+          break;
+        case 3:
+          moduletype = Register;  
+          drawMenu();
+          break;          
+        default:
+          break;
+        }
+      }
+    }
 
+    else{ //must be main menu
+      if (buttonDown.wasPressed()){
+        menuCounter++;
+        lastMenuTime = millis();
+        if(menuCounter > numberOfMenuItems){
+          menuCounter = 1;
+        }
+        drawMenu();
+      }
+      else if (buttonUp.wasPressed()){
+        menuCounter--;
+        lastMenuTime = millis();
+        if(menuCounter < 1){
+          menuCounter = numberOfMenuItems;
+        }
+        drawMenu();
+      }
+      else if (buttonRight.wasPressed()){
+        if (menuCounter == 4){
+          saveNVSSettingsReset();
+        }
+        MenuEditActive = true;
+        drawMenu();
+      }
+      else if (buttonLeft.wasPressed()){
+        MenuActive = false; //exit menu
+        menuCounter = 1;
+        writeIdleScreen(); 
+      }
+    }
   }
 
   if (isOutputModule){ //handle incoming midi messages
