@@ -103,8 +103,8 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
   if (moduletype==Noten) {  
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
-      pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
-      setOutput(pitch,HIGH); //schakel noot in
+      int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
+      setOutput(outputpitch,HIGH); //schakel noot in
       if (!MenuActive){
         writeNoteOnScreen(pitch);
       }
