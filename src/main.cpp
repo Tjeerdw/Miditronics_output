@@ -8,7 +8,7 @@
 #include <Fonts/FreeMono9pt7b.h>
 #include <MIDI.h>
 #include <ArduinoNvs.h>
-#include <EasyButton.h>
+#include <ezButton.h>
 
 //config midi instance on serial 2
 #ifdef SERIALMIDI
@@ -57,10 +57,10 @@ uint16_t previousInputs[4] = {0,0,0,0};
 uint8_t menuCounter = 1;
 uint8_t numberOfMenuItems = 4;
 
-EasyButton buttonLeft(BUT_LEFT_PIN,40,true,true);
-EasyButton buttonRight(BUT_RIGHT_PIN,40,true,true);
-EasyButton buttonUp(BUT_UP_PIN,40,true,true);
-EasyButton buttonDown(BUT_DOWN_PIN,40,true,true);
+ezButton buttonLeft(BUT_LEFT_PIN);
+ezButton buttonRight(BUT_RIGHT_PIN);
+ezButton buttonUp(BUT_UP_PIN);
+ezButton buttonDown(BUT_DOWN_PIN);
 
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
@@ -196,11 +196,6 @@ void setup() {
     for(;;); // Don't proceed, loop forever
   } 
 
-  buttonLeft.begin();
-  buttonRight.begin();
-  buttonUp.begin();
-  buttonDown.begin();
-
   pinMode(IO_Identity,INPUT);
   isOutputModule = digitalRead(IO_Identity); //read hardware type
 
@@ -260,19 +255,19 @@ void setup() {
 }
 
 void loop() {
-  buttonRight.read();
+ buttonRight.loop();
 
-  if (buttonRight.wasPressed()){
+  if (buttonRight.isPressed()){
       MenuActive = true;
       lastMenuTime = millis();
       drawMenu();
     }
 
   while(MenuActive){ //just stay in the menu, nothing else to do
-    buttonDown.read();
-    buttonUp.read();
-    buttonLeft.read();
-    buttonRight.read();
+    buttonDown.loop();
+    buttonUp.loop();
+    buttonLeft.loop();
+    buttonRight.loop();
 
     if (millis() - lastMenuTime > menuTimout){
       MenuActive = false; //exit menu
@@ -282,11 +277,11 @@ void loop() {
     }
     
     if (MenuEditActive){
-      if (buttonLeft.wasPressed()){
+      if (buttonLeft.isPressed()){
       MenuEditActive = false;
       drawMenu();
       }
-      else if (buttonUp.wasPressed()){
+      else if (buttonUp.isPressed()){
         switch (menuCounter)
         {
         case 1:
@@ -309,7 +304,7 @@ void loop() {
           break;
         }
       }
-      else if (buttonDown.wasPressed()){
+      else if (buttonDown.isPressed()){
         switch (menuCounter)
         {
         case 1:
@@ -335,7 +330,7 @@ void loop() {
     }
 
     else{ //must be main menu
-      if (buttonDown.wasPressed()){
+      if (buttonDown.isPressed()){
         menuCounter++;
         lastMenuTime = millis();
         if(menuCounter > numberOfMenuItems){
@@ -343,7 +338,7 @@ void loop() {
         }
         drawMenu();
       }
-      else if (buttonUp.wasPressed()){
+      else if (buttonUp.isPressed()){
         menuCounter--;
         lastMenuTime = millis();
         if(menuCounter < 1){
@@ -351,14 +346,14 @@ void loop() {
         }
         drawMenu();
       }
-      else if (buttonRight.wasPressed()){
+      else if (buttonRight.isPressed()){
         if (menuCounter == 4){
           saveNVSSettingsReset();
         }
         MenuEditActive = true;
         drawMenu();
       }
-      else if (buttonLeft.wasPressed()){
+      else if (buttonLeft.isPressed()){
         MenuActive = false; //exit menu
         menuCounter = 1;
         writeIdleScreen(); 
