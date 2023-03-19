@@ -9,7 +9,7 @@
 #include <MIDI.h>
 #include <ArduinoNvs.h>
 #include <ezButton.h>
-
+ //test
 //config midi instance on serial 2
 #ifdef SERIALMIDI
   MIDI_CREATE_INSTANCE(HardwareSerial, Serial, MIDI);
