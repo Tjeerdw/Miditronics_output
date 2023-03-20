@@ -128,14 +128,6 @@ void writeRegisterOnScreen (uint8_t lastRegister){
   display.display();
 }
 
-void writeHitOnScreen (uint8_t lastRegister){
-  display.setTextSize(4);
-  display.setCursor(0,32);
-  display.print("    ");
-  display.setCursor(0,32);
-  display.print("HIT!");
-  display.display();
-}
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
@@ -163,7 +155,6 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
   if (moduletype==Register) {
-    writeHitOnScreen(100);
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
