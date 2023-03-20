@@ -34,6 +34,7 @@ unsigned long lastMenuTime = 0;
 unsigned long debounceDelay = 50; 
 unsigned long menuTimout = 10000;
 
+uint8_t standaardVelocity = 127; // ter ere van hendrikus
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
@@ -47,6 +48,25 @@ char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G
                             "C7","C#7","D7","D#7","E7","F7","F#7","G7","G#7","A7","A#7","B7",
                             "C8","C#8","D8","D#8","E8","F8","F#8","G8","G#8","A8","A#8","B8",
                             "C9","C#9","D9","D#9","E9","F9","F#9","G9",};
+
+
+//lijst met registernamen. Deze bevat niet toegewezen registernummers, vervangen door 'DMMY' t.b.v kloppende indexering
+char registerNames[87][20] = {"Prestant 16'","Bourdon 16'","Principaal 8'","Bourdon 8'","Salicionaal 8'",
+                            "Quintadeen 8'","Flute Harmonique 8'","Octaaf 4'","Fluit 4'","Salicet 4'",
+                            "Quint 2 2/3'","Octaaf 2'","Nachthoorn 2'","Tertiaan II","Cymbel III",
+                            "Mixtuur III-V","Cornet V ","Fagot 16'","Trompet 8'","Dulciaan 8'",
+                            "Klaroen 4'","DMMY","DMMY","DMMY","DMMY","DMMY","DMMY","DMMY","DMMY",
+                            "Quintadeen 16'","Prestant 8'","Holpijp 8'","Violon 8'","Unda Maris 8'",
+                            "Prestant 4'","Roerfluit 4'","Salicionaal 4'","Nasard 2 2/3'","Octaaf 2'",
+                            "Woudfluit 2'","Quint 1 1/3'","Sesquialter II","Scherp III","Trompet Harm. 8'",
+                            "Schalmeij 8'","DMMY","DMMY","DMMY","DMMY","Viola di Gamba 8'","Voix Celeste 8'",
+                            "Bourdon 8'","Prestantfluit 4'","Aeoline 4'","Roerquint 2 2/3'","Piccolo 2'",
+                            "Terts 1 3/5'","Larigot 1 1/3'","Septime 1 1/7'","Flageolet 1'","Carillon",
+                            "Basson Hobo 8'","Clarinet 8'","Vox Humana 8'","DMMY","DMMY","DMMY","DMMY","DMMY",
+                            "Prestant 8'","Roerfluit 8'","Quintadeen  8'","Viola 8'","Octaaf  4'","Gemshoorn 4'",
+                            "Fluit douce 4'","Nasard 2 2/3'","Septime 2 2/7'","Octaaf 2'","Flageolet 2'",
+                            "Terts 1 3/5'","Sifflet 1'","None 8/9'","Ruispijp II","Mixtuur III-V","Regaal 16'","Kromhoorn 8'"};
+
 
 const int controlChangeAan = 80;//control change waarde aan
 const int controlChangeUit = 81;//control change waarde uit
@@ -98,10 +118,28 @@ void writeNoteOnScreen(uint8_t lastnote){
   display.display();
 }
 
+
+void writeRegisterOnScreen (uint8_t lastRegister){
+  display.setTextSize(2);
+  display.setCursor(0,32);
+  display.print("    ");
+  display.setCursor(0,32);
+  display.print(registerNames[lastRegister]);
+  display.display();
+}
+
+void writeHitOnScreen (uint8_t lastRegister){
+  display.setTextSize(4);
+  display.setCursor(0,32);
+  display.print("    ");
+  display.setCursor(0,32);
+  display.print("HIT!");
+  display.display();
+}
+
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
-  if (moduletype==Noten) {  
-    velocity = 127; //ter ere van Hendrikus
+  if (moduletype==Noten) {
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
       setOutput(outputpitch,HIGH); //schakel noot in
@@ -115,7 +153,6 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
 //note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
   if (moduletype==Noten) {
-    velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<=eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
       setOutput(pitch,LOW); //schakel noot uit
@@ -126,39 +163,57 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
   if (moduletype==Register) {
+    writeHitOnScreen(100);
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
         setOutput(i,LOW);
       }
     }
-  //Alle registers los
+    //Alle registers los
     if ((incomingValue == 127) && (incomingNumber == controlChangeAan)) {
       for (int i = 1; i < totaalModuleKanalen; i++) {
         setOutput(i,HIGH);
       }
     }
-  //Register inschakelen      
+    //Register inschakelen      
     if (incomingNumber == controlChangeAan) {
       if (!(incomingValue<registerOffSet)){ //checkt of dit register binnen ingestelde bereik valt
         if (registerOffSet){ 
-            incomingValue=(incomingValue - registerOffSet);  //converteert control change waarde naar juiste output in geval van offset
-           }
-        setOutput(incomingValue, HIGH);
+          incomingValue=(incomingValue - registerOffSet);  //converteert control change waarde naar juiste output in geval van offset
+          setOutput(incomingValue, HIGH);
+          if (!MenuActive){
+            writeRegisterOnScreen(incomingValue);
+          }
+        }
+        else {
+          setOutput(incomingValue, HIGH);
+          if (!MenuActive){
+            writeRegisterOnScreen(incomingValue);
+          }
+        }
       }
-  }
+    }
     //Register uitschakelen
     if (incomingNumber == controlChangeUit) {
       if (!(incomingValue<registerOffSet)) {
         if (registerOffSet){
           incomingValue=(incomingValue - registerOffSet); 
+          setOutput(incomingValue, LOW);
+          if (!MenuActive){
+          writeRegisterOnScreen(incomingValue);
           }
-        setOutput(incomingValue, LOW);
+        }
+        else {
+          setOutput(incomingValue, LOW);
+          if (!MenuActive){
+          writeRegisterOnScreen(incomingValue);
+          }
+        }
       }
     }
   }   
 }
-
 
 void drawMenu(){
   lastMenuTime = millis();
@@ -378,8 +433,15 @@ void loop() {
         for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOn & (1<<j)){
             uint8_t GPIO = bitToGPIO(j+(16*i));
-            MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
-            writeNoteOnScreen((GPIO-1)+startNoot);
+            if (moduletype == Register){
+              MIDI.sendControlChange((GPIO-1)+startNoot,controlChangeAan,MidiChannel);
+              writeRegisterOnScreen((GPIO-1)+startNoot);
+            }
+            else{
+              MIDI.sendNoteOn((GPIO-1)+startNoot,standaardVelocity,MidiChannel);
+              writeNoteOnScreen((GPIO-1)+startNoot);
+            }
+            
             #ifdef SERIALDEBUG
             Serial.print(GPIO);
             Serial.println(" on");
@@ -391,7 +453,12 @@ void loop() {
        for (int j=0;j<16;j++){ //go though 16 bits in input buffer
           if (bitsOff & (1<<j)){
             uint8_t GPIO = bitToGPIO(j+(16*i));
-            MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
+            if (moduletype == Register){
+              MIDI.sendControlChange((GPIO-1)+startNoot,controlChangeUit,MidiChannel);
+            }
+            else{
+              MIDI.sendNoteOff((GPIO-1)+startNoot,standaardVelocity,MidiChannel);
+            }
             #ifdef SERIALDEBUG
             Serial.print(GPIO);
             Serial.println(" off");
