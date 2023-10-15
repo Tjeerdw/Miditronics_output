@@ -242,6 +242,7 @@ void setup() {
     digitalWrite(MIDI_IN_DE_PIN, HIGH);} //transmitter enable
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
   Serial2.begin(115200, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
+  Serial2.flush();
 #ifdef SERIALMIDI
   Serial.begin(115200);
 #endif
@@ -249,8 +250,7 @@ void setup() {
   MIDI.setHandleNoteOn(handleNoteOn);
   MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.setHandleControlChange(handleControlChange);
- 
-  delay(3000);
+  delay(2000);
   writeIdleScreen();
 }
 
