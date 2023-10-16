@@ -246,10 +246,12 @@ void setup() {
 #ifdef SERIALMIDI
   Serial.begin(115200);
 #endif
-  MIDI.turnThruOff();
-  MIDI.setHandleNoteOn(handleNoteOn);
-  MIDI.setHandleNoteOff(handleNoteOff);
-  MIDI.setHandleControlChange(handleControlChange);
+  //MIDI.turnThruOff();
+  if (isOutputModule){
+    MIDI.setHandleNoteOn(handleNoteOn);
+    MIDI.setHandleNoteOff(handleNoteOff);
+    MIDI.setHandleControlChange(handleControlChange);
+  }
   delay(2000);
   writeIdleScreen();
 }
@@ -400,6 +402,7 @@ void loop() {
         }
       }
     }
+    MIDI.read(); //for Midi Though messages
     // TODO: send not changes for the changed inputs
   }
 }
