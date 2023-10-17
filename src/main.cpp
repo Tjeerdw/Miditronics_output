@@ -100,31 +100,50 @@ void writeNoteOnScreen(uint8_t lastnote){
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
+#ifdef SERIALDEBUG
+  Serial.printf("NoteOn: ch:%d pitch:%d Velocity:%d\n", incomingChannel, pitch, velocity);
+#endif
   if (moduletype==Noten) {  
     velocity = 127; //ter ere van Hendrikus
-    if ((pitch>=startNoot) && (pitch<=eindNoot)) {
+    if ((pitch>=startNoot) && (pitch<eindNoot)) {
       int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
       setOutput(outputpitch,HIGH); //schakel noot in
       if (!MenuActive){
         writeNoteOnScreen(pitch);
       }
     }
+#ifdef SERIALDEBUG
+    else{ 
+      Serial.println("ERROR: out of GPIO range");
+    }
+#endif
   }
 }
 
 //note-Off message afhandelen
 void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
+#ifdef SERIALDEBUG
+  Serial.printf("NoteOff: ch:%d pitch:%d Velocity:%d\n", incomingChannel, pitch, velocity);
+#endif
   if (moduletype==Noten) {
     velocity = 127; //ter ere van Hendrikus
-    if ((pitch>=startNoot) && (pitch<=eindNoot)) {
+    if ((pitch>=startNoot) && (pitch<eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
       setOutput(pitch,LOW); //schakel noot uit
-    } 
+    }
+#ifdef SERIALDEBUG
+    else{ 
+      Serial.println("ERROR: out of GPIO range");
+    }
+#endif 
   }
 }
 
 //Control-Change message afhandelen
 void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomingValue){
+#ifdef SERIALDEBUG
+  Serial.printf("CC: ch:%d Controller:%d Value:%d\n", incomingChannel, incomingNumber, incomingValue);
+#endif
   if (moduletype==Register) {
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
@@ -138,25 +157,24 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
         setOutput(i,HIGH);
       }
     }
-  //Register inschakelen      
-    if (incomingNumber == controlChangeAan) {
-      if (!(incomingValue<registerOffSet)){ //checkt of dit register binnen ingestelde bereik valt
-        if (registerOffSet){ 
-            incomingValue=(incomingValue - registerOffSet);  //converteert control change waarde naar juiste output in geval van offset
-           }
-        setOutput(incomingValue, HIGH);
+  //Register inschakelen/uitschakelen      
+    if (incomingNumber == controlChangeAan || incomingNumber == controlChangeUit  ) {
+      if (incomingValue>= registerOffSet && incomingValue<registerOffSet+totaalModuleKanalen){ //checkt of dit register binnen ingestelde bereik valt TODO:fix
+        incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
+        if (incomingNumber == controlChangeAan){
+          setOutput(incomingValue, HIGH);
+        }
+        else{ //must be CC off
+          setOutput(incomingValue,LOW);
+        }
+      } 
+#ifdef SERIALDEBUG
+      else{ 
+        Serial.println("ERROR: out of GPIO range");
       }
-  }
-    //Register uitschakelen
-    if (incomingNumber == controlChangeUit) {
-      if (!(incomingValue<registerOffSet)) {
-        if (registerOffSet){
-          incomingValue=(incomingValue - registerOffSet); 
-          }
-        setOutput(incomingValue, LOW);
-      }
+#endif
     }
-  }   
+  }
 }
 
 
@@ -322,11 +340,16 @@ void inputModuleCall() {
       for (int j=0;j<16;j++){ //go though 16 bits in input buffer
         if (bitsOn & (1<<j)){
           uint8_t GPIO = bitToGPIO(j+(16*i));
-          MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
-          writeNoteOnScreen((GPIO-1)+startNoot);
+          if (moduletype == Noten){
+            MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
+            writeNoteOnScreen((GPIO-1)+startNoot);
+          }
+          else{//must be register
+            MIDI.sendControlChange(controlChangeAan,(GPIO-1)+registerOffSet,MidiChannel);
+          }
           #ifdef SERIALDEBUG
-          Serial.print(GPIO);
-          Serial.println(" on");
+            Serial.print(GPIO);
+            Serial.println(" on");
           #endif
         }
       }
@@ -335,10 +358,15 @@ void inputModuleCall() {
       for (int j=0;j<16;j++){ //go though 16 bits in input buffer
         if (bitsOff & (1<<j)){
           uint8_t GPIO = bitToGPIO(j+(16*i));
-          MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
+          if (moduletype == Noten){
+            MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
+          }
+          else{//must be register
+            MIDI.sendControlChange(controlChangeUit,(GPIO-1)+registerOffSet,MidiChannel);
+          }
           #ifdef SERIALDEBUG
-          Serial.print(GPIO);
-          Serial.println(" off");
+            Serial.print(GPIO);
+            Serial.println(" off");
           #endif
         }
       }
