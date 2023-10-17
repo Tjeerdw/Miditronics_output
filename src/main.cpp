@@ -171,11 +171,17 @@ void drawMenu(){
   display.print(MidiChannel);
 
   display.setCursor(7,8);
-  display.print("Startnoot"); //todo alternate register setting
-  display.setCursor(95,8);
-  display.print(noteNames[startNoot]);
+  if(moduletype ==  Noten){ 
+    display.print("Startnoot"); //todo alternate register setting
+    display.setCursor(95,8);
+    display.print(noteNames[startNoot]);}
+  if(moduletype ==  Register){ 
+    display.print("Startregister"); //todo alternate register setting
+    display.setCursor(95,8);
+    display.print(registerOffSet);}
 
   display.setCursor(7,16);
+ 
   display.print("Module type");
   display.setCursor(95,16);
   display.print(moduletypeNames[moduletype]);
@@ -186,6 +192,160 @@ void drawMenu(){
   display.setCursor(((int)MenuEditActive*88),(menuCounter-1)*8);
   display.print(">");
   display.display();  
+}
+
+void menuCall(){
+  buttonDown.loop();
+  buttonUp.loop();
+  buttonLeft.loop();
+  buttonRight.loop();
+
+  if (millis() - lastMenuTime > menuTimout){
+    MenuActive = false; //exit menu
+    menuCounter = 1;
+    MenuEditActive = false;
+    writeIdleScreen(); 
+  }
+  
+  if (MenuEditActive){
+    if (buttonLeft.isPressed()){
+    MenuEditActive = false;
+    drawMenu();
+    }
+    else if (buttonUp.isPressed()){
+      switch (menuCounter)
+      {
+      case 1: //midi kanaal
+        if (MidiChannel<16){
+          MidiChannel++;
+          drawMenu();
+        }          
+        break;
+      case 2: //startnoot/registeroffset
+        if(moduletype ==  Noten){
+          if (startNoot<(127-totaalModuleKanalen)){
+            startNoot++;
+            drawMenu();
+          }
+        }
+        else{//must be register
+          if (registerOffSet<(127-totaalModuleKanalen)){
+            registerOffSet++;
+            drawMenu();
+          }
+        }
+        break;
+      case 3:
+        moduletype = Noten;
+        drawMenu();
+        break;            
+      default:
+        break;
+      }
+    }
+    else if (buttonDown.isPressed()){
+      switch (menuCounter)
+      {
+      case 1:
+        if (MidiChannel>0){
+          MidiChannel--;
+          drawMenu();
+        }          
+        break;
+      case 2:
+        if(moduletype ==  Noten){
+          if (startNoot>0){
+            startNoot--;
+            drawMenu();
+          }
+        }
+        else{//must be register
+          if (registerOffSet>1){
+            registerOffSet--;
+            drawMenu();
+          }
+        }
+        break;
+      case 3:
+        moduletype = Register;  
+        drawMenu();
+        break;          
+      default:
+        break;
+      }
+    }
+  }
+
+  else{ //must be main menu
+    if (buttonDown.isPressed()){
+      menuCounter++;
+      lastMenuTime = millis();
+      if(menuCounter > numberOfMenuItems){
+        menuCounter = 1;
+      }
+      drawMenu();
+    }
+    else if (buttonUp.isPressed()){
+      menuCounter--;
+      lastMenuTime = millis();
+      if(menuCounter < 1){
+        menuCounter = numberOfMenuItems;
+      }
+      drawMenu();
+    }
+    else if (buttonRight.isPressed()){
+      if (menuCounter == 4){
+        saveNVSSettingsReset();
+      }
+      MenuEditActive = true;
+      drawMenu();
+    }
+    else if (buttonLeft.isPressed()){
+      MenuActive = false; //exit menu
+      menuCounter = 1;
+      writeIdleScreen(); 
+    }
+  }
+}
+
+void inputModuleCall() {
+  previousInputs[0] = actualInputs[0];//kan vast met een kortere assignment
+  previousInputs[1] = actualInputs[1];
+  previousInputs[2] = actualInputs[2];
+  previousInputs[3] = actualInputs[3];
+  readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
+  
+  for (int i=0;i<4;i++){ //go through 4 input buffers
+    uint16_t bitsOn  = ~previousInputs[i] &  actualInputs[i]; //check for new bits high
+    uint16_t bitsOff =  previousInputs[i] & ~actualInputs[i]; //check for new bits low
+    if (bitsOn){
+      for (int j=0;j<16;j++){ //go though 16 bits in input buffer
+        if (bitsOn & (1<<j)){
+          uint8_t GPIO = bitToGPIO(j+(16*i));
+          MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
+          writeNoteOnScreen((GPIO-1)+startNoot);
+          #ifdef SERIALDEBUG
+          Serial.print(GPIO);
+          Serial.println(" on");
+          #endif
+        }
+      }
+    }
+    if (bitsOff){
+      for (int j=0;j<16;j++){ //go though 16 bits in input buffer
+        if (bitsOff & (1<<j)){
+          uint8_t GPIO = bitToGPIO(j+(16*i));
+          MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
+          #ifdef SERIALDEBUG
+          Serial.print(GPIO);
+          Serial.println(" off");
+          #endif
+        }
+      }
+    }
+  }
+  MIDI.read(); //for Midi Though messages
+  // TODO: send not changes for the changed inputs
 }
 
 void setup() {
@@ -257,8 +417,7 @@ void setup() {
 }
 
 void loop() {
- buttonRight.loop();
-
+  buttonRight.loop(); //check for menu entry
   if (buttonRight.isPressed()){
       MenuActive = true;
       lastMenuTime = millis();
@@ -266,143 +425,14 @@ void loop() {
     }
 
   while(MenuActive){ //just stay in the menu, nothing else to do
-    buttonDown.loop();
-    buttonUp.loop();
-    buttonLeft.loop();
-    buttonRight.loop();
-
-    if (millis() - lastMenuTime > menuTimout){
-      MenuActive = false; //exit menu
-      menuCounter = 1;
-      MenuEditActive = false;
-      writeIdleScreen(); 
-    }
-    
-    if (MenuEditActive){
-      if (buttonLeft.isPressed()){
-      MenuEditActive = false;
-      drawMenu();
-      }
-      else if (buttonUp.isPressed()){
-        switch (menuCounter)
-        {
-        case 1:
-          if (MidiChannel<16){
-            MidiChannel++;
-            drawMenu();
-          }          
-          break;
-        case 2:
-          if (startNoot<(127-totaalModuleKanalen)){
-            startNoot++;
-            drawMenu();
-          }
-          break;
-        case 3:
-          moduletype = Noten;
-          drawMenu();
-          break;            
-        default:
-          break;
-        }
-      }
-      else if (buttonDown.isPressed()){
-        switch (menuCounter)
-        {
-        case 1:
-          if (MidiChannel>0){
-            MidiChannel--;
-            drawMenu();
-          }          
-          break;
-        case 2:
-          if (startNoot>0){
-            startNoot--;
-            drawMenu();
-          }
-          break;
-        case 3:
-          moduletype = Register;  
-          drawMenu();
-          break;          
-        default:
-          break;
-        }
-      }
-    }
-
-    else{ //must be main menu
-      if (buttonDown.isPressed()){
-        menuCounter++;
-        lastMenuTime = millis();
-        if(menuCounter > numberOfMenuItems){
-          menuCounter = 1;
-        }
-        drawMenu();
-      }
-      else if (buttonUp.isPressed()){
-        menuCounter--;
-        lastMenuTime = millis();
-        if(menuCounter < 1){
-          menuCounter = numberOfMenuItems;
-        }
-        drawMenu();
-      }
-      else if (buttonRight.isPressed()){
-        if (menuCounter == 4){
-          saveNVSSettingsReset();
-        }
-        MenuEditActive = true;
-        drawMenu();
-      }
-      else if (buttonLeft.isPressed()){
-        MenuActive = false; //exit menu
-        menuCounter = 1;
-        writeIdleScreen(); 
-      }
-    }
+    menuCall();
   }
 
   if (isOutputModule){ //handle incoming midi messages
     MIDI.read();} //read incoming messages and let handler do the rest
   
   else{//must be input module
-    previousInputs[0] = actualInputs[0];//kan vast met een kortere assignment
-    previousInputs[1] = actualInputs[1];
-    previousInputs[2] = actualInputs[2];
-    previousInputs[3] = actualInputs[3];
-    readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
+    inputModuleCall();
     
-    for (int i=0;i<4;i++){ //go through 4 input buffers
-      uint16_t bitsOn  = ~previousInputs[i] &  actualInputs[i]; //check for new bits high
-      uint16_t bitsOff =  previousInputs[i] & ~actualInputs[i]; //check for new bits low
-      if (bitsOn){
-        for (int j=0;j<16;j++){ //go though 16 bits in input buffer
-          if (bitsOn & (1<<j)){
-            uint8_t GPIO = bitToGPIO(j+(16*i));
-            MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
-            writeNoteOnScreen((GPIO-1)+startNoot);
-            #ifdef SERIALDEBUG
-            Serial.print(GPIO);
-            Serial.println(" on");
-            #endif
-          }
-        }
-      }
-      if (bitsOff){
-       for (int j=0;j<16;j++){ //go though 16 bits in input buffer
-          if (bitsOff & (1<<j)){
-            uint8_t GPIO = bitToGPIO(j+(16*i));
-            MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
-            #ifdef SERIALDEBUG
-            Serial.print(GPIO);
-            Serial.println(" off");
-            #endif
-          }
-        }
-      }
-    }
-    MIDI.read(); //for Midi Though messages
-    // TODO: send not changes for the changed inputs
   }
 }
