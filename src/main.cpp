@@ -33,9 +33,17 @@ unsigned long lastDebounceTime = 0;
 unsigned long lastMenuTime = 0;
 unsigned long debounceDelay = 50; 
 unsigned long menuTimout = 10000;
+unsigned long screenUpdatePeriod = 1000; //time between screen updates
+unsigned long screenUpdatetimout = 3000; //time note or register is on screen
+bool updateForScreen = false; //is there something new to put on the screen?
+bool noteOnScreen = false; //is there currently something on the display
+unsigned long lastScreenUpdate = 0;
+
 
 uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermodule
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
+uint8_t lastregister = 0;
+uint8_t lastnote = 0;
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
                             "C0","C#0","D0","D#0","E0","F0","F#0","G0","G#0","A0","A#0","B0",
                             "C1","C#1","D1","D#1","E1","F1","F#1","G1","G#1","A1","A#1","B1",
@@ -89,14 +97,38 @@ void writeIdleScreen(){
   display.display();
 }
 
-void writeNoteOnScreen(uint8_t lastnote){
-  display.setTextSize(4);
-  display.setCursor(0,32);
-  display.print("    ");
-  display.setCursor(0,32);
-  display.print(noteNames[lastnote]);
-  display.display();
+void updateScreen(){
+  if (updateForScreen){
+    if (millis()> (lastScreenUpdate+screenUpdatePeriod)){
+      lastScreenUpdate=millis();
+      display.setTextSize(3);
+      display.setCursor(0,32);
+      display.print("      ");
+      display.setCursor(0,32);
+      if (moduletype == Noten){
+        display.print(noteNames[lastnote]);
+      }
+      else{
+        display.printf("Reg %d",lastregister);
+      }
+      display.display();
+      updateForScreen = false;
+      noteOnScreen = true;
+
+    }
+  }
+  if(noteOnScreen){
+    if (millis()> (lastScreenUpdate+screenUpdatetimout)){
+      display.setTextSize(3);
+      display.setCursor(0,32);
+      display.print("      ");
+      display.display();
+      noteOnScreen = false;
+    }
+  }  
 }
+
+
 
 //note-On message afhandelen
 void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
@@ -108,9 +140,8 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
     if ((pitch>=startNoot) && (pitch<eindNoot)) {
       int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
       setOutput(outputpitch,HIGH); //schakel noot in
-      if (!MenuActive){
-        writeNoteOnScreen(pitch);
-      }
+      lastnote = pitch;
+      updateForScreen = true;
     }
 #ifdef SERIALDEBUG
     else{ 
@@ -163,6 +194,8 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
         incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
         if (incomingNumber == controlChangeAan){
           setOutput(incomingValue, HIGH);
+          lastregister = incomingValue;
+          updateForScreen = true;
         }
         else{ //must be CC off
           setOutput(incomingValue,LOW);
@@ -176,7 +209,6 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
     }
   }
 }
-
 
 void drawMenu(){
   lastMenuTime = millis();
@@ -342,10 +374,13 @@ void inputModuleCall() {
           uint8_t GPIO = bitToGPIO(j+(16*i));
           if (moduletype == Noten){
             MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
-            writeNoteOnScreen((GPIO-1)+startNoot);
+            lastnote = (GPIO-1)+startNoot;
+            updateForScreen = true;
           }
           else{//must be register
             MIDI.sendControlChange(controlChangeAan,(GPIO-1)+registerOffSet,MidiChannel);
+            lastregister = (GPIO-1)+registerOffSet;
+            updateForScreen = true;
           }
           #ifdef SERIALDEBUG
             Serial.print(GPIO);
@@ -458,9 +493,8 @@ void loop() {
 
   if (isOutputModule){ //handle incoming midi messages
     MIDI.read();} //read incoming messages and let handler do the rest
-  
   else{//must be input module
     inputModuleCall();
-    
   }
+  updateScreen();
 }
