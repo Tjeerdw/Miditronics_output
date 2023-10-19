@@ -191,7 +191,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
   //Register inschakelen/uitschakelen      
     if (incomingNumber == controlChangeAan || incomingNumber == controlChangeUit  ) {
       if (incomingValue>= registerOffSet && incomingValue<registerOffSet+totaalModuleKanalen){ //checkt of dit register binnen ingestelde bereik valt TODO:fix
-        incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
+        //incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
         if (incomingNumber == controlChangeAan){
           setOutput(incomingValue, HIGH);
           lastregister = incomingValue;
