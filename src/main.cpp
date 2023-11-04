@@ -457,20 +457,22 @@ void setup() {
   #endif
 
   //Midi init, listen Omni
-  //Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   pinMode(MIDI_IN_DE_PIN, OUTPUT);
   if (isOutputModule){
     digitalWrite(MIDI_IN_DE_PIN, LOW);} //Receiver enable 
   else{
     digitalWrite(MIDI_IN_DE_PIN, HIGH);} //transmitter enable
+  
+  Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //serial voor en na midi.begin zetten lijkt betrouwbaar
+  Serial2.flush();
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
-  Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
+   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   Serial2.flush();
 #ifdef SERIALMIDI
   Serial.begin(115200);
 #endif
-  //MIDI.turnThruOff();
   if (isOutputModule){
+    MIDI.turnThruOff(); //turn tru off for ouput modules since there is a hardware Tru
     MIDI.setHandleNoteOn(handleNoteOn);
     MIDI.setHandleNoteOff(handleNoteOff);
     MIDI.setHandleControlChange(handleControlChange);
