@@ -103,7 +103,7 @@ void updateScreen(){
       lastScreenUpdate=millis();
       display.setTextSize(3);
       display.setCursor(0,32);
-      display.print("      ");
+      display.print("       ");
       display.setCursor(0,32);
       if (moduletype == Noten){
         display.print(noteNames[lastnote]);
@@ -193,12 +193,12 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
       if (incomingValue>= registerOffSet && incomingValue<registerOffSet+totaalModuleKanalen){ //checkt of dit register binnen ingestelde bereik valt TODO:fix
         //incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
         if (incomingNumber == controlChangeAan){
-          setOutput(incomingValue, HIGH);
+          setOutput(incomingValue-(registerOffSet-1), HIGH);
           lastregister = incomingValue;
           updateForScreen = true;
         }
         else{ //must be CC off
-          setOutput(incomingValue,LOW);
+          setOutput(incomingValue-(registerOffSet-1),LOW);
         }
       } 
 #ifdef SERIALDEBUG
@@ -279,7 +279,7 @@ void menuCall(){
           }
         }
         else{//must be register
-          if (registerOffSet<(127-totaalModuleKanalen)){
+          if (registerOffSet<(128-totaalModuleKanalen)){
             registerOffSet++;
             drawMenu();
           }
