@@ -75,6 +75,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
 void loadNVSSettings(){
   MidiChannel = NVS.getInt("channel");
+  if (MidiChannel < 1) MidiChannel = 1;
   moduletype = (moduletypes)NVS.getInt("regmodule"); //TODO: test this
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
@@ -297,7 +298,7 @@ void menuCall(){
       switch (menuCounter)
       {
       case 1:
-        if (MidiChannel>0){
+        if (MidiChannel>1){
           MidiChannel--;
           drawMenu();
         }          

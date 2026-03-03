@@ -1,0 +1,14 @@
+Project changelog
+=================
+
+2026-03-03 - Fix: MidiChannel minimum value
+------------------------------------------------
+Bug: MidiChannel could be set to 0 via the menu (buttonDown), but MIDI
+channels are 1-16. Channel 0 is invalid.
+
+Changes in src/main.cpp:
+  - Line 300: changed lower-bound check from `MidiChannel>0` to
+    `MidiChannel>1` so the down button stops at channel 1.
+  - Line 77: added guard after loading from NVS storage
+    (`if (MidiChannel < 1) MidiChannel = 1;`) to protect against a
+    previously stored invalid value of 0.
