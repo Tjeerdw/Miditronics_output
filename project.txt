@@ -12,3 +12,24 @@ Changes in src/main.cpp:
   - Line 77: added guard after loading from NVS storage
     (`if (MidiChannel < 1) MidiChannel = 1;`) to protect against a
     previously stored invalid value of 0.
+
+2026-03-04 - Feature: Show git commit hash in OLED menu
+--------------------------------------------------------
+Display the last 6 hex characters of the current git commit hash in the
+main menu, between "Module type" and "Save & reboot". Useful for
+identifying which firmware version is flashed on a device.
+
+New file: get_git_hash.py
+  - PlatformIO pre-build script that runs `git rev-parse HEAD` and
+    passes the last 6 characters as -DGIT_COMMIT_SHORT compiler flag.
+
+Changes in platformio.ini:
+  - Added `extra_scripts = pre:get_git_hash.py` to run the script
+    before each build.
+
+Changes in src/main.cpp:
+  - Line 66: numberOfMenuItems changed from 4 to 5.
+  - drawMenu(): Added "Version" row at y=24 showing GIT_COMMIT_SHORT,
+    moved "Save & reboot" from y=24 to y=32.
+  - menuCall(): Save trigger changed from menuCounter==4 to ==5.
+    Added early return when menuCounter==4 (version row is read-only).

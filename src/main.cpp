@@ -63,7 +63,7 @@ uint16_t actualInputs[4] = {0,0,0,0};
 uint16_t previousInputs[4] = {0,0,0,0};
 #define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
 uint8_t menuCounter = 1;
-uint8_t numberOfMenuItems = 4;
+uint8_t numberOfMenuItems = 5;
 
 ezButton buttonLeft(BUT_LEFT_PIN);
 ezButton buttonRight(BUT_RIGHT_PIN);
@@ -238,6 +238,11 @@ void drawMenu(){
   display.print(moduletypeNames[moduletype]);
 
   display.setCursor(7,24);
+  display.print("Version");
+  display.setCursor(95,24);
+  display.print(GIT_COMMIT_SHORT);
+
+  display.setCursor(7,32);
   display.print("Save & reboot");
 
   display.setCursor(((int)MenuEditActive*88),(menuCounter-1)*8);
@@ -345,9 +350,10 @@ void menuCall(){
       drawMenu();
     }
     else if (buttonRight.isPressed()){
-      if (menuCounter == 4){
+      if (menuCounter == 5){
         saveNVSSettingsReset();
       }
+      if (menuCounter == 4) return; // version row is display-only
       MenuEditActive = true;
       drawMenu();
     }
