@@ -179,13 +179,13 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
   if (moduletype==Register) {
   //Generaal Reset
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
-      for (int i = 1; i < totaalModuleKanalen; i++) {
+      for (int i = 1; i <= totaalModuleKanalen; i++) {
         setOutput(i,LOW);
       }
     }
   //Alle registers los
     if ((incomingValue == 127) && (incomingNumber == controlChangeAan)) {
-      for (int i = 1; i < totaalModuleKanalen; i++) {
+      for (int i = 1; i <= totaalModuleKanalen; i++) {
         setOutput(i,HIGH);
       }
     }
