@@ -446,7 +446,11 @@ void setup() {
 #endif
 
   //Non-volatile storage init
-  NVS.begin();
+  if (!NVS.begin()) {
+    display.println("NVS Error");
+    display.display();
+    for(;;); // Don't proceed, loop forever
+  }
   loadNVSSettings();
   display.printf("MIDI kanaal: %02d\nModuletype: %s\nRegister offset: %02d\nStartnoot: %s\n",MidiChannel,moduletypeNames[moduletype],registerOffSet,noteNames[startNoot]);
   display.display(); 
