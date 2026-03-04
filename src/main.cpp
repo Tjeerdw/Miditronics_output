@@ -159,6 +159,13 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
 #endif
   if (moduletype==Noten) {
     velocity = 127; //ter ere van Hendrikus
+    //All Notes Off - note 127 is panic note (CC 123 is filtered by merger)
+    if (pitch == 127) {
+      for (int i = 1; i <= totaalModuleKanalen; i++) {
+        setOutput(i, LOW);
+      }
+      return;
+    }
     if ((pitch>=startNoot) && (pitch<eindNoot)) {
       pitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
       setOutput(pitch,LOW); //schakel noot uit
@@ -207,14 +214,6 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
         Serial.println("ERROR: out of GPIO range");
       }
 #endif
-    }
-  }
-  if (moduletype==Noten) {
-    //All Notes Off (CC 123)
-    if (incomingNumber == 123) {
-      for (int i = 1; i <= totaalModuleKanalen; i++) {
-        setOutput(i, LOW);
-      }
     }
   }
 }

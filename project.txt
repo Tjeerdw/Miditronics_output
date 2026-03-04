@@ -59,3 +59,18 @@ Changes in src/main.cpp:
   - handleControlChange(): Added block after the Register section
     (line 212) that checks for moduletype==Noten and incomingNumber==123,
     then loops through all outputs setting them LOW.
+
+2026-03-04 - Fix: Replace CC 123 with NoteOff 127 as "All Notes Off" panic
+-------------------------------------------------------------------------------
+The CC 123 handler added earlier doesn't work in practice: the external
+MIDI merger filters out CC messages on note channels, so CC 123 never
+reaches the output module. Replaced with NoteOff for MIDI note 127 (G9),
+which passes through the merger. Note 127 is far above any organ pipe
+range so it won't conflict with normal operation.
+
+Changes in src/main.cpp:
+  - handleNoteOff(): Added early check for pitch==127 before the range
+    check. When received, loops through all outputs setting them LOW and
+    returns early (same pattern as the register "Generaal Reset").
+  - handleControlChange(): Removed the moduletype==Noten / CC 123 block
+    since CC messages are unreachable through the merger.
