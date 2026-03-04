@@ -5,7 +5,7 @@
 
 //turn on serial debugging or midi, please choose one
 //dont forget to change static const long BaudRate = 115200; in serialMIDI.h
-#define SERIALDEBUG  
+//#define SERIALDEBUG  
 //#define SERIALMIDI
 
 //OLED
