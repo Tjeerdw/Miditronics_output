@@ -209,6 +209,14 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
 #endif
     }
   }
+  if (moduletype==Noten) {
+    //All Notes Off (CC 123)
+    if (incomingNumber == 123) {
+      for (int i = 1; i <= totaalModuleKanalen; i++) {
+        setOutput(i, LOW);
+      }
+    }
+  }
 }
 
 void drawMenu(){
