@@ -61,7 +61,7 @@ const int controlChangeUit = 81;//control change waarde uit
 uint8_t totaalModuleKanalen = 0;   //definieert het aantal kanalen dat deze module kan aansturen (32/64)
 uint16_t actualInputs[4] = {0,0,0,0};
 uint16_t previousInputs[4] = {0,0,0,0};
-#define eindNoot  startNoot+totaalModuleKanalen //midi-nootnummer waar deze module stopt met reageren
+#define eindNoot  (startNoot+totaalModuleKanalen) //midi-nootnummer waar deze module stopt met reageren
 uint8_t menuCounter = 1;
 uint8_t numberOfMenuItems = 5;
 
