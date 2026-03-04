@@ -6,6 +6,6 @@ ret = subprocess.run(
     capture_output=True, text=True, cwd=env["PROJECT_DIR"]
 )
 commit_hash = ret.stdout.strip()
-short_hash = commit_hash[-6:] if len(commit_hash) >= 6 else "??????"
+short_hash = commit_hash[-5:] if len(commit_hash) >= 5 else "?????"
 
 env.Append(BUILD_FLAGS=[f'-DGIT_COMMIT_SHORT=\\"{short_hash}\\"'])
