@@ -373,7 +373,7 @@ void menuCall(){
 }
 
 void inputModuleCall() {
-  memcpy(previousInputs, actualInputs, sizeof(actualInputs));
+  memcpy(previousInputs, actualInputs, sizeof(actualInputs)); 
   readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
   
   for (int i=0;i<4;i++){ //go through 4 input buffers
@@ -419,7 +419,6 @@ void inputModuleCall() {
     }
   }
   MIDI.read(); //for Midi Though messages
-  // TODO: send not changes for the changed inputs
 }
 
 void setup() {
@@ -481,7 +480,7 @@ void setup() {
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //serial voor en na midi.begin zetten lijkt betrouwbaar
   Serial2.flush();
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
-   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
+  Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   Serial2.flush();
 #ifdef SERIALMIDI
   Serial.begin(115200);
@@ -493,6 +492,10 @@ void setup() {
     MIDI.setHandleControlChange(handleControlChange);
   }
   delay(2000);
+  if (!isOutputModule) { //seed input buffers with actual hardware state to avoid spurious notes on first scan
+    readInputs(totaalModuleKanalen, actualInputs);
+    memcpy(previousInputs, actualInputs, sizeof(actualInputs));
+  }
   writeIdleScreen();
 }
 

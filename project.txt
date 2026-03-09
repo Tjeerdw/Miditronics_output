@@ -83,3 +83,21 @@ sizeof(actualInputs) keeps it correct if the array ever grows (32-input TODO).
 Changes in src/main.cpp:
   - inputModuleCall(): Replaced 4-line manual copy with
     memcpy(previousInputs, actualInputs, sizeof(actualInputs));
+
+2026-03-09 - Fix: Seed input buffers from hardware state at startup
+--------------------------------------------------------------------
+Bug: actualInputs/previousInputs were both initialized to {0,0,0,0}.
+If the first readInputs() call in loop() returned a non-zero value (I2C
+glitch, MCP23017 not yet settled), bitsOn would fire for every differing
+bit, flooding MIDI output with spurious NoteOn messages. The user's first
+real key press would be lost in the flood; the second note worked because
+the flood had settled by then.
+
+Fix: At the end of setup(), after delay(2000) when hardware is settled,
+do an initial readInputs() and memcpy to seed both buffers to the actual
+hardware state. The first loop iteration then compares state-to-itself,
+generating no spurious events.
+
+Changes in src/main.cpp:
+  - setup(): Added readInputs() + memcpy(previousInputs, actualInputs)
+    after delay(2000), guarded by !isOutputModule.
