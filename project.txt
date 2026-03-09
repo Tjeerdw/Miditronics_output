@@ -74,3 +74,12 @@ Changes in src/main.cpp:
     returns early (same pattern as the register "Generaal Reset").
   - handleControlChange(): Removed the moduletype==Noten / CC 123 block
     since CC messages are unreachable through the merger.
+
+2026-03-09 - Refactor: Simplify previousInputs copy in inputModuleCall()
+---------------------------------------------------------------------------
+Replaced 4 individual array element assignments with a single memcpy() call.
+sizeof(actualInputs) keeps it correct if the array ever grows (32-input TODO).
+
+Changes in src/main.cpp:
+  - inputModuleCall(): Replaced 4-line manual copy with
+    memcpy(previousInputs, actualInputs, sizeof(actualInputs));

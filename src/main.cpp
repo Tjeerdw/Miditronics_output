@@ -373,10 +373,7 @@ void menuCall(){
 }
 
 void inputModuleCall() {
-  previousInputs[0] = actualInputs[0];//kan vast met een kortere assignment
-  previousInputs[1] = actualInputs[1];
-  previousInputs[2] = actualInputs[2];
-  previousInputs[3] = actualInputs[3];
+  memcpy(previousInputs, actualInputs, sizeof(actualInputs));
   readInputs(totaalModuleKanalen, actualInputs);     // TODO make 32 input compatible
   
   for (int i=0;i<4;i++){ //go through 4 input buffers
