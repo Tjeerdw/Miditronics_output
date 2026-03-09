@@ -477,12 +477,14 @@ void setup() {
   else{
     digitalWrite(MIDI_IN_DE_PIN, HIGH);} //transmitter enable
   
+  //sequence bewow seems redudant but is needed. init is needed for proper flush of output boards(don't ask why). Second begin is neede because midi.begin overwrites pin config.
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //serial voor en na midi.begin zetten lijkt betrouwbaar
   Serial2.flush();
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   Serial2.flush();
-#ifdef SERIALMIDI
+
+  #ifdef SERIALMIDI
   Serial.begin(115200);
 #endif
   if (isOutputModule){
