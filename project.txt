@@ -101,3 +101,54 @@ generating no spurious events.
 Changes in src/main.cpp:
   - setup(): Added readInputs() + memcpy(previousInputs, actualInputs)
     after delay(2000), guarded by !isOutputModule.
+
+2026-03-09 - Feature: SplitMode — combined note + register on one PCB
+----------------------------------------------------------------------
+New module type "Split" where outputs 1–56 respond to MIDI notes and
+outputs 57–64 respond to MIDI register CC messages, allowing a single
+PCB to replace both a Noten and a Register module. The 56/8 boundary
+is fixed. Two MIDI channels are configurable: one for notes, one for
+registers. MIDI_CHANNEL_OMNI is used so the ESP32 receives both
+channels simultaneously.
+
+NVS: new key "regchannel" (default 1, valid range 8–9) added beside
+existing "channel". Old devices missing this key default safely to 8.
+
+Menu extended from 5 to 7 rows:
+  Row 0: Noot kanaal   (1–16)
+  Row 1: Reg kanaal    (8–9, Split only meaningful)
+  Row 2: Startnoot     (0 – 127-totaalModuleKanalen)
+  Row 3: Startregister (1–127)
+  Row 4: Module type   (Noten / Regis / Split)
+  Row 5: Version       (read-only GIT_COMMIT_SHORT)
+  Row 6: Save & reboot
+
+OLED display in Split mode: tracks lastUpdateWasNote flag so the screen
+shows note names for note events and "Reg N" for register events.
+
+Fixes also included on this branch:
+  - outputs.cpp extendersInit: off-by-one — reset loop was `i<channelNumbers`,
+    changed to `i<=channelNumbers` so output 64 is also reset at startup.
+
+Changes in src/main.cpp:
+  - Added #define SPLIT_NOTE_CHANNELS 56
+  - Enum moduletypes extended: { Noten, Register, Split }
+  - moduletypeNames[3][6] updated to include "Split"
+  - Added global uint8_t MidiChannelRegister = 1
+  - Added global bool lastUpdateWasNote = true
+  - loadNVSSettings(): load "regchannel" with guard >=8 default
+  - saveNVSSettingsReset(): save "regchannel"
+  - handleNoteOn(): Split block — channel MidiChannel, outputs 1–56
+  - handleNoteOff(): Split block — channel MidiChannel, outputs 1–56;
+    pitch==127 panic resets outputs 1–56
+  - handleControlChange(): Split block — channel MidiChannelRegister,
+    outputs 57–64
+  - inputModuleCall(): Split routing — GPIO<=56 sends NoteOn/Off on
+    MidiChannel; GPIO>56 sends CC on MidiChannelRegister
+  - setup(): MIDI.setInputChannel(MIDI_CHANNEL_OMNI) when Split
+  - updateScreen(): fixed to show notes vs registers based on lastUpdateWasNote
+  - numberOfMenuItems = 7; drawMenu() 7 rows; menuCall() 7 cases
+
+Changes in src/outputs.cpp:
+  - extendersInit(): reset loop changed from i<channelNumbers to
+    i<=channelNumbers (off-by-one fix, output 64 now reset at startup)

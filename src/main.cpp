@@ -17,11 +17,14 @@
   MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 #endif
 
-//Persistent variables through EEPROM
-uint8_t MidiChannel=1;          
+#define SPLIT_NOTE_CHANNELS 56   // outputs 1-56 = notes, 57-64 = registers in Split mode
 
-enum moduletypes { Noten, Register };
-char moduletypeNames[2][6] = { "Noten", "Regis"};
+//Persistent variables through EEPROM
+uint8_t MidiChannel=1;
+uint8_t MidiChannelRegister=1;  // register channel (Split mode only)
+
+enum moduletypes { Noten, Register, Split };
+char moduletypeNames[3][6] = { "Noten", "Regis", "Split"};
 moduletypes moduletype = Noten;
 
 bool isOutputModule = false;
@@ -44,6 +47,7 @@ uint8_t registerOffSet = 0;     // registeroffset in geval van extra registermod
 uint8_t startNoot = 23;         // midi-nootnummer waarop deze module moet starten (24 = C1, 36 = C2, 48 = C3) 
 uint8_t lastregister = 0;
 uint8_t lastnote = 0;
+bool lastUpdateWasNote = true; // used in Split mode to decide what to show on screen
 char noteNames[128][5] = { "C-1","C#-1","D-1","D#-1","E-1","F-1","F#-1","G-1","G#-1","A-1","A#-1","B-1",
                             "C0","C#0","D0","D#0","E0","F0","F#0","G0","G#0","A0","A#0","B0",
                             "C1","C#1","D1","D#1","E1","F1","F#1","G1","G#1","A1","A#1","B1",
@@ -63,7 +67,7 @@ uint16_t actualInputs[4] = {0,0,0,0};
 uint16_t previousInputs[4] = {0,0,0,0};
 #define eindNoot  (startNoot+totaalModuleKanalen) //midi-nootnummer waar deze module stopt met reageren
 uint8_t menuCounter = 1;
-uint8_t numberOfMenuItems = 5;
+uint8_t numberOfMenuItems = 7;
 
 ezButton buttonLeft(BUT_LEFT_PIN);
 ezButton buttonRight(BUT_RIGHT_PIN);
@@ -76,14 +80,16 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 void loadNVSSettings(){
   MidiChannel = NVS.getInt("channel");
   if (MidiChannel < 1) MidiChannel = 1;
+  MidiChannelRegister = NVS.getInt("regchannel"); // defaults to 0 on old devices, guarded below
+  if (MidiChannelRegister < 8 || MidiChannelRegister > 9) MidiChannelRegister = 8;
   moduletype = (moduletypes)NVS.getInt("regmodule"); //TODO: test this
   registerOffSet = NVS.getInt("regoffset");
   startNoot = NVS.getInt("startnoot");
-  
 }
 
 void saveNVSSettingsReset(){
   NVS.setInt("channel",MidiChannel);
+  NVS.setInt("regchannel",MidiChannelRegister);
   NVS.setInt("regmodule",moduletype);
   NVS.setInt("regoffset",registerOffSet);
   NVS.setInt("startnoot", startNoot);
@@ -106,7 +112,7 @@ void updateScreen(){
       display.setCursor(0,32);
       display.print("       ");
       display.setCursor(0,32);
-      if (moduletype == Noten){
+      if (moduletype == Noten || (moduletype == Split && lastUpdateWasNote)){
         display.print(noteNames[lastnote]);
       }
       else{
@@ -136,19 +142,29 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
 #ifdef SERIALDEBUG
   Serial.printf("NoteOn: ch:%d pitch:%d Velocity:%d\n", incomingChannel, pitch, velocity);
 #endif
-  if (moduletype==Noten) {  
+  if (moduletype==Noten) {
     velocity = 127; //ter ere van Hendrikus
     if ((pitch>=startNoot) && (pitch<eindNoot)) {
-      int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer        
+      int outputpitch = (pitch-(startNoot-1)); //converteert noot naar het juiste outputnummer
       setOutput(outputpitch,HIGH); //schakel noot in
       lastnote = pitch;
       updateForScreen = true;
     }
 #ifdef SERIALDEBUG
-    else{ 
+    else{
       Serial.println("ERROR: out of GPIO range");
     }
 #endif
+  }
+  if (moduletype==Split && incomingChannel==MidiChannel) {
+    velocity = 127; //ter ere van Hendrikus
+    if ((pitch>=startNoot) && (pitch<startNoot+SPLIT_NOTE_CHANNELS)) {
+      int outputpitch = (pitch-(startNoot-1));
+      setOutput(outputpitch,HIGH);
+      lastnote = pitch;
+      lastUpdateWasNote = true;
+      updateForScreen = true;
+    }
   }
 }
 
@@ -171,10 +187,22 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
       setOutput(pitch,LOW); //schakel noot uit
     }
 #ifdef SERIALDEBUG
-    else{ 
+    else{
       Serial.println("ERROR: out of GPIO range");
     }
-#endif 
+#endif
+  }
+  if (moduletype==Split && incomingChannel==MidiChannel) {
+    velocity = 127; //ter ere van Hendrikus
+    if (pitch == 127) { // panic: all notes off
+      for (int i = 1; i <= SPLIT_NOTE_CHANNELS; i++) {
+        setOutput(i, LOW);
+      }
+      return;
+    }
+    if ((pitch>=startNoot) && (pitch<startNoot+SPLIT_NOTE_CHANNELS)) {
+      setOutput(pitch-(startNoot-1), LOW);
+    }
   }
 }
 
@@ -196,7 +224,7 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
         setOutput(i,HIGH);
       }
     }
-  //Register inschakelen/uitschakelen      
+  //Register inschakelen/uitschakelen
     if (incomingNumber == controlChangeAan || incomingNumber == controlChangeUit  ) {
       if (incomingValue>= registerOffSet && incomingValue<registerOffSet+totaalModuleKanalen){ //checkt of dit register binnen ingestelde bereik valt TODO:fix
         //incomingValue=(incomingValue - (registerOffSet-1));  //converteert control change waarde naar juiste output in geval van offset
@@ -208,12 +236,34 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
         else{ //must be CC off
           setOutput(incomingValue-(registerOffSet-1),LOW);
         }
-      } 
+      }
 #ifdef SERIALDEBUG
-      else{ 
+      else{
         Serial.println("ERROR: out of GPIO range");
       }
 #endif
+    }
+  }
+  if (moduletype==Split && incomingChannel==MidiChannelRegister) {
+  //Generaal Reset registers (split mode)
+    if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
+      for (int i = SPLIT_NOTE_CHANNELS+1; i <= totaalModuleKanalen; i++) {
+        setOutput(i, LOW);
+      }
+    }
+  //Register aan/uit (split mode) — outputs 57-64
+    if (incomingNumber == controlChangeAan || incomingNumber == controlChangeUit) {
+      if (incomingValue >= registerOffSet && incomingValue < registerOffSet+8) {
+        if (incomingNumber == controlChangeAan){
+          setOutput(incomingValue-(registerOffSet-1)+SPLIT_NOTE_CHANNELS, HIGH);
+          lastregister = incomingValue;
+          lastUpdateWasNote = false;
+          updateForScreen = true;
+        }
+        else{
+          setOutput(incomingValue-(registerOffSet-1)+SPLIT_NOTE_CHANNELS, LOW);
+        }
+      }
     }
   }
 }
@@ -223,38 +273,43 @@ void drawMenu(){
 
   display.clearDisplay();
   display.setTextSize(1);
+
   display.setCursor(7,0);
-  display.print("Midi kanaal");
+  display.print("Noot kanaal");
   display.setCursor(95,0);
   display.print(MidiChannel);
 
   display.setCursor(7,8);
-  if(moduletype ==  Noten){ 
-    display.print("Startnoot"); //todo alternate register setting
-    display.setCursor(95,8);
-    display.print(noteNames[startNoot]);}
-  if(moduletype ==  Register){ 
-    display.print("Startregister"); //todo alternate register setting
-    display.setCursor(95,8);
-    display.print(registerOffSet);}
+  display.print("Reg kanaal");
+  display.setCursor(95,8);
+  display.print(MidiChannelRegister);
 
   display.setCursor(7,16);
- 
-  display.print("Module type");
+  display.print("Startnoot");
   display.setCursor(95,16);
-  display.print(moduletypeNames[moduletype]);
+  display.print(noteNames[startNoot]);
 
   display.setCursor(7,24);
-  display.print("Version");
+  display.print("Startregister");
   display.setCursor(95,24);
-  display.print(GIT_COMMIT_SHORT);
+  display.print(registerOffSet);
 
   display.setCursor(7,32);
+  display.print("Module type");
+  display.setCursor(95,32);
+  display.print(moduletypeNames[moduletype]);
+
+  display.setCursor(7,40);
+  display.print("Version");
+  display.setCursor(95,40);
+  display.print(GIT_COMMIT_SHORT);
+
+  display.setCursor(7,48);
   display.print("Save & reboot");
 
   display.setCursor(((int)MenuEditActive*88),(menuCounter-1)*8);
   display.print(">");
-  display.display();  
+  display.display();
 }
 
 void menuCall(){
@@ -272,36 +327,28 @@ void menuCall(){
   
   if (MenuEditActive){
     if (buttonLeft.isPressed()){
-    MenuEditActive = false;
-    drawMenu();
+      MenuEditActive = false;
+      drawMenu();
     }
     else if (buttonUp.isPressed()){
       switch (menuCounter)
       {
-      case 1: //midi kanaal
-        if (MidiChannel<16){
-          MidiChannel++;
-          drawMenu();
-        }          
+      case 1: //noot kanaal
+        if (MidiChannel<16){ MidiChannel++; drawMenu(); }
         break;
-      case 2: //startnoot/registeroffset
-        if(moduletype ==  Noten){
-          if (startNoot<(127-totaalModuleKanalen)){
-            startNoot++;
-            drawMenu();
-          }
-        }
-        else{//must be register
-          if (registerOffSet<(128-totaalModuleKanalen)){
-            registerOffSet++;
-            drawMenu();
-          }
-        }
+      case 2: //register kanaal (8 or 9 only)
+        if (MidiChannelRegister<9){ MidiChannelRegister++; drawMenu(); }
         break;
-      case 3:
+      case 3: //startnoot
+        if (startNoot<(127-totaalModuleKanalen)){ startNoot++; drawMenu(); }
+        break;
+      case 4: //startregister
+        if (registerOffSet<(128-totaalModuleKanalen)){ registerOffSet++; drawMenu(); }
+        break;
+      case 5: //module type
         moduletype = Noten;
         drawMenu();
-        break;            
+        break;
       default:
         break;
       }
@@ -310,29 +357,21 @@ void menuCall(){
       switch (menuCounter)
       {
       case 1:
-        if (MidiChannel>1){
-          MidiChannel--;
-          drawMenu();
-        }          
+        if (MidiChannel>1){ MidiChannel--; drawMenu(); }
         break;
       case 2:
-        if(moduletype ==  Noten){
-          if (startNoot>0){
-            startNoot--;
-            drawMenu();
-          }
-        }
-        else{//must be register
-          if (registerOffSet>1){
-            registerOffSet--;
-            drawMenu();
-          }
-        }
+        if (MidiChannelRegister>8){ MidiChannelRegister--; drawMenu(); }
         break;
       case 3:
-        moduletype = Register;  
+        if (startNoot>0){ startNoot--; drawMenu(); }
+        break;
+      case 4:
+        if (registerOffSet>1){ registerOffSet--; drawMenu(); }
+        break;
+      case 5:
+        moduletype = (moduletype == Split) ? Noten : (moduletypes)((int)moduletype+1);
         drawMenu();
-        break;          
+        break;
       default:
         break;
       }
@@ -357,17 +396,15 @@ void menuCall(){
       drawMenu();
     }
     else if (buttonRight.isPressed()){
-      if (menuCounter == 5){
-        saveNVSSettingsReset();
-      }
-      if (menuCounter == 4) return; // version row is display-only
+      if (menuCounter == 7){ saveNVSSettingsReset(); }
+      if (menuCounter == 6) return; // version row is display-only
       MenuEditActive = true;
       drawMenu();
     }
     else if (buttonLeft.isPressed()){
       MenuActive = false; //exit menu
       menuCounter = 1;
-      writeIdleScreen(); 
+      writeIdleScreen();
     }
   }
 }
@@ -388,10 +425,23 @@ void inputModuleCall() {
             lastnote = (GPIO-1)+startNoot;
             updateForScreen = true;
           }
-          else{//must be register
+          else if (moduletype == Register){
             MIDI.sendControlChange(controlChangeAan,(GPIO-1)+registerOffSet,MidiChannel);
             lastregister = (GPIO-1)+registerOffSet;
             updateForScreen = true;
+          }
+          else { //Split: GPIO 1-56 = notes, 57-64 = registers
+            if (GPIO <= SPLIT_NOTE_CHANNELS){
+              MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
+              lastnote = (GPIO-1)+startNoot;
+              lastUpdateWasNote = true;
+              updateForScreen = true;
+            } else {
+              MIDI.sendControlChange(controlChangeAan,(GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet,MidiChannelRegister);
+              lastregister = (GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet;
+              lastUpdateWasNote = false;
+              updateForScreen = true;
+            }
           }
           #ifdef SERIALDEBUG
             Serial.print(GPIO);
@@ -407,8 +457,15 @@ void inputModuleCall() {
           if (moduletype == Noten){
             MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
           }
-          else{//must be register
+          else if (moduletype == Register){
             MIDI.sendControlChange(controlChangeUit,(GPIO-1)+registerOffSet,MidiChannel);
+          }
+          else { //Split
+            if (GPIO <= SPLIT_NOTE_CHANNELS){
+              MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
+            } else {
+              MIDI.sendControlChange(controlChangeUit,(GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet,MidiChannelRegister);
+            }
           }
           #ifdef SERIALDEBUG
             Serial.print(GPIO);
@@ -483,6 +540,7 @@ void setup() {
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   Serial2.flush();
+  if (moduletype == Split) MIDI.setInputChannel(MIDI_CHANNEL_OMNI); // Split needs both channels
 
   #ifdef SERIALMIDI
   Serial.begin(115200);
