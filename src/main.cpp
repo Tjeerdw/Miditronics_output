@@ -17,14 +17,12 @@
   MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 #endif
 
-#define SPLIT_NOTE_CHANNELS 56   // outputs 1-56 = notes, 57-64 = registers in Split mode
-
 //Persistent variables through EEPROM
 uint8_t MidiChannel=1;
 uint8_t MidiChannelRegister=1;  // register channel (Split mode only)
 
-enum moduletypes { Noten, Register, Split };
-char moduletypeNames[3][6] = { "Noten", "Regis", "Split"};
+enum moduletypes { Noten, Register, ManualSplit, PedalSplit };
+char moduletypeNames[4][6] = { "Noten", "Regis", "56/8", "32/32"};
 moduletypes moduletype = Noten;
 
 bool isOutputModule = false;
@@ -77,6 +75,9 @@ ezButton buttonDown(BUT_DOWN_PIN);
 TwoWire display_I2C =  TwoWire(0);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &display_I2C, OLED_RESET);
 
+inline bool isSplitMode() { return moduletype == ManualSplit || moduletype == PedalSplit; }
+inline int splitNoteCount() { return (moduletype == PedalSplit) ? 32 : 56; }
+
 void loadNVSSettings(){
   MidiChannel = NVS.getInt("channel");
   if (MidiChannel < 1) MidiChannel = 1;
@@ -112,7 +113,7 @@ void updateScreen(){
       display.setCursor(0,32);
       display.print("       ");
       display.setCursor(0,32);
-      if (moduletype == Noten || (moduletype == Split && lastUpdateWasNote)){
+      if (moduletype == Noten || (isSplitMode() && lastUpdateWasNote)){
         display.print(noteNames[lastnote]);
       }
       else{
@@ -156,9 +157,9 @@ void handleNoteOn(byte incomingChannel, byte pitch, byte velocity){
     }
 #endif
   }
-  if (moduletype==Split && incomingChannel==MidiChannel) {
+  if (isSplitMode() && incomingChannel==MidiChannel) {
     velocity = 127; //ter ere van Hendrikus
-    if ((pitch>=startNoot) && (pitch<startNoot+SPLIT_NOTE_CHANNELS)) {
+    if ((pitch>=startNoot) && (pitch<startNoot+splitNoteCount())) {
       int outputpitch = (pitch-(startNoot-1));
       setOutput(outputpitch,HIGH);
       lastnote = pitch;
@@ -192,15 +193,15 @@ void handleNoteOff(byte incomingChannel, byte pitch, byte velocity){
     }
 #endif
   }
-  if (moduletype==Split && incomingChannel==MidiChannel) {
+  if (isSplitMode() && incomingChannel==MidiChannel) {
     velocity = 127; //ter ere van Hendrikus
     if (pitch == 127) { // panic: all notes off
-      for (int i = 1; i <= SPLIT_NOTE_CHANNELS; i++) {
+      for (int i = 1; i <= splitNoteCount(); i++) {
         setOutput(i, LOW);
       }
       return;
     }
-    if ((pitch>=startNoot) && (pitch<startNoot+SPLIT_NOTE_CHANNELS)) {
+    if ((pitch>=startNoot) && (pitch<startNoot+splitNoteCount())) {
       setOutput(pitch-(startNoot-1), LOW);
     }
   }
@@ -244,24 +245,24 @@ void handleControlChange(byte incomingChannel, byte incomingNumber, byte incomin
 #endif
     }
   }
-  if (moduletype==Split && incomingChannel==MidiChannelRegister) {
+  if (isSplitMode() && incomingChannel==MidiChannelRegister) {
   //Generaal Reset registers (split mode)
     if ((incomingValue == 127) && (incomingNumber == controlChangeUit)) {
-      for (int i = SPLIT_NOTE_CHANNELS+1; i <= totaalModuleKanalen; i++) {
+      for (int i = splitNoteCount()+1; i <= totaalModuleKanalen; i++) {
         setOutput(i, LOW);
       }
     }
-  //Register aan/uit (split mode) — outputs 57-64
+  //Register aan/uit (split mode)
     if (incomingNumber == controlChangeAan || incomingNumber == controlChangeUit) {
-      if (incomingValue >= registerOffSet && incomingValue < registerOffSet+8) {
+      if (incomingValue >= registerOffSet && incomingValue < registerOffSet+(totaalModuleKanalen-splitNoteCount())) {
         if (incomingNumber == controlChangeAan){
-          setOutput(incomingValue-(registerOffSet-1)+SPLIT_NOTE_CHANNELS, HIGH);
+          setOutput(incomingValue-(registerOffSet-1)+splitNoteCount(), HIGH);
           lastregister = incomingValue;
           lastUpdateWasNote = false;
           updateForScreen = true;
         }
         else{
-          setOutput(incomingValue-(registerOffSet-1)+SPLIT_NOTE_CHANNELS, LOW);
+          setOutput(incomingValue-(registerOffSet-1)+splitNoteCount(), LOW);
         }
       }
     }
@@ -346,8 +347,7 @@ void menuCall(){
         if (registerOffSet<(128-totaalModuleKanalen)){ registerOffSet++; drawMenu(); }
         break;
       case 5: //module type
-        moduletype = Noten;
-        drawMenu();
+        if (moduletype > Noten) { moduletype = (moduletypes)((int)moduletype - 1); drawMenu(); }
         break;
       default:
         break;
@@ -369,8 +369,7 @@ void menuCall(){
         if (registerOffSet>1){ registerOffSet--; drawMenu(); }
         break;
       case 5:
-        moduletype = (moduletype == Split) ? Noten : (moduletypes)((int)moduletype+1);
-        drawMenu();
+        if (moduletype < PedalSplit) { moduletype = (moduletypes)((int)moduletype + 1); drawMenu(); }
         break;
       default:
         break;
@@ -430,15 +429,15 @@ void inputModuleCall() {
             lastregister = (GPIO-1)+registerOffSet;
             updateForScreen = true;
           }
-          else { //Split: GPIO 1-56 = notes, 57-64 = registers
-            if (GPIO <= SPLIT_NOTE_CHANNELS){
+          else if (isSplitMode()) {
+            if (GPIO <= splitNoteCount()){
               MIDI.sendNoteOn((GPIO-1)+startNoot,127,MidiChannel);
               lastnote = (GPIO-1)+startNoot;
               lastUpdateWasNote = true;
               updateForScreen = true;
             } else {
-              MIDI.sendControlChange(controlChangeAan,(GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet,MidiChannelRegister);
-              lastregister = (GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet;
+              MIDI.sendControlChange(controlChangeAan,(GPIO-1-splitNoteCount())+registerOffSet,MidiChannelRegister);
+              lastregister = (GPIO-1-splitNoteCount())+registerOffSet;
               lastUpdateWasNote = false;
               updateForScreen = true;
             }
@@ -460,11 +459,11 @@ void inputModuleCall() {
           else if (moduletype == Register){
             MIDI.sendControlChange(controlChangeUit,(GPIO-1)+registerOffSet,MidiChannel);
           }
-          else { //Split
-            if (GPIO <= SPLIT_NOTE_CHANNELS){
+          else if (isSplitMode()) {
+            if (GPIO <= splitNoteCount()){
               MIDI.sendNoteOff((GPIO-1)+startNoot,127,MidiChannel);
             } else {
-              MIDI.sendControlChange(controlChangeUit,(GPIO-1-SPLIT_NOTE_CHANNELS)+registerOffSet,MidiChannelRegister);
+              MIDI.sendControlChange(controlChangeUit,(GPIO-1-splitNoteCount())+registerOffSet,MidiChannelRegister);
             }
           }
           #ifdef SERIALDEBUG
@@ -540,7 +539,7 @@ void setup() {
   MIDI.begin(MidiChannel); //luister/zend op opgegeven kanaal
   Serial2.begin(31250, SERIAL_8N1, MIDI_IN_RX_PIN, MIDI_IN_TX_PIN); //volgens mij wordt dit al gedaan in de midi.begin
   Serial2.flush();
-  if (moduletype == Split) MIDI.setInputChannel(MIDI_CHANNEL_OMNI); // Split needs both channels
+  if (isSplitMode()) MIDI.setInputChannel(MIDI_CHANNEL_OMNI); // Split modes need both channels
 
   #ifdef SERIALMIDI
   Serial.begin(115200);

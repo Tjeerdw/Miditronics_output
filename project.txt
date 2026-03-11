@@ -152,3 +152,30 @@ Changes in src/main.cpp:
 Changes in src/outputs.cpp:
   - extendersInit(): reset loop changed from i<channelNumbers to
     i<=channelNumbers (off-by-one fix, output 64 now reset at startup)
+
+2026-03-11 - Feature: PedalSplit mode (32 notes + 32 registers)
+----------------------------------------------------------------
+Added a fourth module type "PedalSplit" (display: "32/32") for pedal boards
+where outputs 1-32 respond to MIDI notes and outputs 33-64 respond to MIDI
+register CC messages. The existing "Split" mode was renamed "ManualSplit"
+(display: "56/8") to distinguish the two.
+
+Design: two inline helpers replace the old SPLIT_NOTE_CHANNELS constant so
+all split logic is shared between both modes:
+  - isSplitMode(): true for ManualSplit and PedalSplit
+  - splitNoteCount(): returns 56 for ManualSplit, 32 for PedalSplit
+
+Also fixed: module-type menu UP button previously jumped straight to Noten
+instead of stepping backward. Both UP and DOWN now clamp at the ends (same
+behavior as all other menu items).
+
+Changes in src/main.cpp:
+  - Removed #define SPLIT_NOTE_CHANNELS
+  - Enum extended: { Noten, Register, ManualSplit, PedalSplit }
+  - moduletypeNames[4][6]: "Noten","Regis","56/8","32/32"
+  - Added isSplitMode() and splitNoteCount() helpers
+  - All moduletype==Split → isSplitMode()
+  - All SPLIT_NOTE_CHANNELS → splitNoteCount()
+  - handleControlChange: register range uses totaalModuleKanalen-splitNoteCount()
+  - menuCall case 5 UP: step backward, clamp at Noten
+  - menuCall case 5 DOWN: step forward, clamp at PedalSplit
