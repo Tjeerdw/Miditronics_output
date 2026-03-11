@@ -99,9 +99,16 @@ void saveNVSSettingsReset(){
 
 void writeIdleScreen(){
   display.clearDisplay();
-  display.setTextSize(4);
-  display.setCursor(0,0);
-  display.printf("CH:%02d\n",MidiChannel);
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.print(moduletypeNames[moduletype]);
+  display.setCursor(0, 16);
+  if (isSplitMode()) {
+    display.printf("N:%d R:%d", MidiChannel, MidiChannelRegister);
+  } else {
+    uint8_t ch = (moduletype == Register) ? MidiChannelRegister : MidiChannel;
+    display.printf("CH: %d", ch);
+  }
   display.display();
 }
 

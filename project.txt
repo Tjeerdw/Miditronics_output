@@ -179,3 +179,13 @@ Changes in src/main.cpp:
   - handleControlChange: register range uses totaalModuleKanalen-splitNoteCount()
   - menuCall case 5 UP: step backward, clamp at Noten
   - menuCall case 5 DOWN: step forward, clamp at PedalSplit
+
+2026-03-11 - Improvement: idle screen shows module type and channel(s)
+-----------------------------------------------------------------------
+writeIdleScreen() rewritten from a single large "CH:XX" (size 4) to a
+two-line layout (size 2) that fits in the top half (y=0..31), leaving
+the bottom half free for note/register display during MIDI activity:
+  Noten:  "Noten" / "CH: X"       (shows MidiChannel)
+  Regis:  "Regis" / "CH: X"       (shows MidiChannelRegister)
+  56/8:   "56/8"  / "N:X R:X"     (shows both channels)
+  32/32:  "32/32" / "N:X R:X"     (shows both channels)
